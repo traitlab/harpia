@@ -1,0 +1,14 @@
+approach: 10
+buffer: 6
+# buffer is added to the flight height
+# it's also used to add a buffer to the height above the tree for the picture
+
+base_path: '/mnt/c/Users/User/Downloads/UdeM/xprize'
+base_name: '20240529_sblz1z2_p1'
+points_csv_file_path: '/mnt/c/Users/vincent.le.falher/Downloads/UdeM/xprize/20240529_sblz1z2_p1/20240529_sblz1z2_p1_waypoints_shortest_path.csv'
+
+# required depending on the installation path. If started from the project folder, no need as defaujlt is relative to project folder.
+# kml_model_file_path: '/opt/treesight/lefolab-dji-waypoints/scripts/wpml/model/Waypoint2/wpmz/template.kml'
+# wpml_model_file_path: '/opt/treesight/lefolab-dji-waypoints/scripts/wpml/model/Waypoint2/wpmz/waylines.wpml'
+# waylines_placemark_no_action: '/opt/treesight/lefolab-dji-waypoints/config/waylines_placemark_no_action.json'
+# waylines_placemark_with_actions: '/opt/treesight/lefolab-dji-waypoints/config/waylines_placemark_with_action.json'

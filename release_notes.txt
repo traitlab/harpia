@@ -1,0 +1,98 @@
+Features / TODO : 
+- Existe t il une option (p-e juste dans SDK?) pour utiliser le mode vision pour naviguer entre les arbres? Par exemple le mode smart RTH qui utilise le path le plus efficace…
+- Add hover action when doing touch sky
+
+Issues
+- No know issues
+
+0.2.11 antoine.caron-guay@umontreal.ca 20250529
+- adding touch sky feature: tous les n placemark (option; 10 défaut, min 5, pas max) aller n metre (option; 100 default; max 200); option activée par défaut (true/false, yes/no, 0/1)
+
+0.2.10 vincent.lefalher@umontreal.ca 20250506
+- manage exception if wrong CSV path and other validation error or exception
+
+0.2.9 vincent.lefalher@umontreal.ca 20250506
+- changer la valeur de <wpml:ellipsoidHeight> dans template.kml pour la valeur en ellips (la même que la valeur que <wpml:executeHeight> dans waylines.wpml). Seulement <wpml:height> va rester en ASL finalement
+- mettre à jour <wpml:createTime> et <wpml:updateTime> dans template.kml
+
+0.2.8 vincent.lefalher@umontreal.ca 20250506
+- removes unecessary polygon_id 
+- multiple fixes by antoine : output path optional; taking input path as output path; base name special chars replaced by '-'; reset takeOffRefPoint height to 0 ; reset distance & duration to 0
+
+0.2.7 vincent.lefalher@umontreal.ca 20250505
+- merge dans v2 de la génération des waylines.wpml. similaire à la génération du template.kml pour faciliter les futurs changements. 
+v2 contient : 
+- options ligne de commande (vs fichier settings.yaml)
+- optimiser la hauteur entre chaque photo en fonction du DSM en utilisant un checkpoint entre les deux waypoints (fichier CSV source)
+- Ajuster la hauteur de vol selon hauteur ellips et non en fonction du point de décollage
+- Switch de l'ordre des photos Zoom-Wide
+- S'assurer d'une orientation constante pour les photos wide et zoom (toujours vers le nord)
+- Compatibilité avec FlightHub (nécessite le waylines)
+- mettre caméra grand angle à environ -15 degrés quand le drone voyage entre les arbres pour qu’on voit bien l’approche du drone entre les arbres
+- Repositionner à -90 quand le drone arrive au dessus de l’arbre
+- Garder à -90 jusqu’à ce que le drone remonte au même point au dessus de l’arbre (soit juste avant de bouger à l’autre arbre)
+- optimiser la vitesse d’approche finale de l’arbre pour la prise de photo (approche 3, vol 15)
+- CameraShutterTime 0.00625 1/160
+
+0.2.6 vincent.lefalher@umontreal.ca 20250505
+- generate waylines
+
+0.2.5 vincent.lefalher@umontreal.ca 20250429
+- reset waypointHeadingParam as before (smoothTransition)
+- removed hover zoom focus
+- use waypointSpeed 15 (vs useGlobalSpeed 1)
+- use waypointSpeed 1 point 3 (bfr orientedShoot)
+- fix toPointAndPassWithContinuityCurvature by toPointAndStopWithDiscontinuityCurvature
+- remove waypointHeadingMode smoothTransition except on the placemark before the photos to have the position to the north; globalWaypointHeadingParam is waypointHeadingMode followWayline
+- fix actionGroup on the last placeMark for the action gimbalRotate 
+
+0.2.4 vincent.lefalher@umontreal.ca 20250429
+- orientedCameraShutterTime 0.00625 1/160
+- useGlobalSpeed
+- action zoom + focus + hover
+
+0.2.3 vincent.lefalher@umontreal.ca 20250429
+- Set the waypointHeadingMode to smoothTransition to north for photos. And then followWayline for all the other points (no photo). 
+
+0.2.2 vincent.lefalher@umontreal.ca 20250428
+- multiple updates
+
+0.2.1 vincent.lefalher@umontreal.ca 20250428
+- add command line options
+- save template.kml and waylines.wpml under wpmz folder
+
+0.2.0 vincent.lefalher@umontreal.ca 20250428
+- new release with multiple changes
+
+0.1.7 vincent.lefalher@umontreal.ca 20250428
+- added README comments and features
+
+0.1.6 vincent.lefalher@umontreal.ca 20240731
+- update settings files; add lefotitan settings
+- update README.md
+- update git-tag.sh and run-git-tag.sh
+
+0.1.5 vincent.lefalher@umontreal.ca 20240731
+- add config properties waylines_placemark_no_action and waylines_placemark_with_actions
+
+0.1.4 vincent.lefalher@umontreal.ca 20240731
+- pass the config file to command line
+
+0.1.3b vincent.lefalher@umontreal.ca 20240722
+- use implicit points csv file path in config
+
+0.1.3 vincent.lefalher@umontreal.ca 20240722
+- set base_path and basae_name; 
+- removes read global csv
+
+0.1.2b vincent.lefalher@umontreal.ca 20240722
+- setting files updates.
+
+0.1.2 vincent.lefalher@umontreal.ca 20240722
+- clean project with unecessary config properties
+
+0.1.1 vincent.lefalher@umontreal.ca 20240715
+- split lefolab-drone-src into 2 projects. This preoject generates the KMZ from CSV coordinates.
+
+0.0.0 vincent.lefalher@umontreal.ca 20240612
+- initial commit

@@ -1,0 +1,8 @@
+requests
+pydantic
+pyyaml
+shapely
+geopandas
+rasterio
+pyproj
+networkx 
