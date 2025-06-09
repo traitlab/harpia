@@ -34,8 +34,8 @@ parser.add_argument('--approach', '-a', type=float, default=10,
                     help='Approach above the tree crown in meters (default: 10)')
 parser.add_argument('--buffer', '-b', type=float, default=6,
                     help='Buffer above the tree crown in meters (default: 6)')
-parser.add_argument('--touch-sky', '-t', type=bool, default=True,
-                    help='Enable touch-sky feature where drone flies up periodically (default: True)')
+parser.add_argument('--touch-sky', '-ts', action='store_true', default=False,
+                    help='Enable touch-sky feature where drone flies up periodically (default: False)')
 parser.add_argument('--touch-sky-interval', '-n', type=int, default=10,
                     help='Number of placemarks between each touch-sky action (default: 10, min: 5)')
 parser.add_argument('--touch-sky-altitude', '-alt', type=float, default=100,
