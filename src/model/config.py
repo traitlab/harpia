@@ -18,9 +18,9 @@ class Config(BaseModel):
     touch_sky_interval: int
     touch_sky_altitude: float
 
-    kml_model_file_path: FilePath = './scripts/wpml/model/onewpt-Remote.kmz.org/wpmz/template.kml'
+    kml_model_file_path: FilePath = './scripts/model/onewpt-wpmz/template.kml'
     output_kml_file_path: Path = 'wpmz/template.kml'
-    wpml_model_file_path: FilePath = './scripts/wpml/model/onewpt-Remote.kmz.org/wpmz/waylines.wpml'
+    wpml_model_file_path: FilePath = './scripts/model/onewpt-wpmz/waylines.wpml'
     output_wpml_file_path: Path = 'wpmz/waylines.wpml'
 
 
