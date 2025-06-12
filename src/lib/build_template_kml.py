@@ -82,8 +82,8 @@ class BuildTemplateKML:
                 lon_x = row['lon_x']
                 lat_y = row['lat_y']
                 elevation_from_dsm = row['elevation_from_dsm']
-                polygon_id = row['polygon_id']
-                properties.append((lat_y, lon_x, elevation_from_dsm, polygon_id))
+                point_id = row['point_id']
+                properties.append((lat_y, lon_x, elevation_from_dsm, point_id))
 
         # Check if the first and last points are the same and remove the last point if they are
         if len(properties) > 1 and properties[0] == properties[-1]:
@@ -152,7 +152,7 @@ class BuildTemplateKML:
         action_group_id = 0
         touch_sky_count = 0
 
-        for idx, (lat_y, lon_x, wpt_elevation_from_dsm, polygon_id) in enumerate(self.wpt_csv_properties):
+        for idx, (lat_y, lon_x, wpt_elevation_from_dsm, point_id) in enumerate(self.wpt_csv_properties):
             _, _, wpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, wpt_elevation_from_dsm)
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx][2]
             _, _, cpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, cpt_elevation_from_dsm)
@@ -171,7 +171,7 @@ class BuildTemplateKML:
             height_ellips = str(float(wpt_elevation_from_dsm) + float(config.buffer))
             height_egm96 = str(float(wpt_ellips_height_egm96) + float(config.buffer))
             self.addTreePhotosPlacemark(
-                base_index + 2, lat_y, lon_x, height_ellips, height_egm96, polygon_id, action_group_id + 1, base_index + 2)
+                base_index + 2, lat_y, lon_x, height_ellips, height_egm96, point_id, action_group_id + 1, base_index + 2)
             
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx+1][2]
             _, _, cpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, cpt_elevation_from_dsm)
@@ -412,7 +412,7 @@ class BuildTemplateKML:
         return action
 
     # -------------------------------------------------------------------------
-    def addTreePhotosPlacemark(self, idx, lat_y, lon_x, height_ellips, height_egm96, polygon_id, actionGroupId, actionGroupIndex):
+    def addTreePhotosPlacemark(self, idx, lat_y, lon_x, height_ellips, height_egm96, point_id, actionGroupId, actionGroupIndex):
         placemark = ET.Element(f'{{{self.namespaces["kml"]}}}Placemark')
 
         point = ET.SubElement(placemark, f'{{{self.namespaces["kml"]}}}Point')
@@ -452,11 +452,11 @@ class BuildTemplateKML:
         placemark.append(wpml_actionGroup)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('0', '168', str(
-            polygon_id) + "zoom", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
+            point_id) + "zoom", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
         wpml_actionGroup.append(wpml_action)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('1', '24', str(
-            polygon_id), '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
+            point_id), '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
         wpml_actionGroup.append(wpml_action)
 
         wpml_isRisky = ET.SubElement(

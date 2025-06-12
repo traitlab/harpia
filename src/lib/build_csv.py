@@ -51,13 +51,13 @@ class BuildCSV:
         merged_gdf['lon_x'] = merged_gdf.geometry.x
         merged_gdf['lat_y'] = merged_gdf.geometry.y
         # Add placeholder columns if missing
-        if 'polygon_id' not in merged_gdf:
-            merged_gdf['polygon_id'] = 0
+        if 'point_id' not in merged_gdf:
+            merged_gdf['point_id'] = 0
         if 'cluster_id' not in merged_gdf:
             merged_gdf['cluster_id'] = 0
         merged_gdf['elevation_from_dsm'] = merged_gdf['elev']
         merged_gdf['order'] = merged_gdf['order'] if 'order' in merged_gdf else range(1, len(merged_gdf)+1)
-        csv_df = merged_gdf[['polygon_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']].copy()
+        csv_df = merged_gdf[['point_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']].copy()
         # 12. Export
         if output_gpkg_path:
             self.export_to_gpkg(merged_gdf, output_gpkg_path)

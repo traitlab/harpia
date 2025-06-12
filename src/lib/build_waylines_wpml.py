@@ -92,8 +92,8 @@ class BuildWaylinesWPML:
                 lon_x = row['lon_x']
                 lat_y = row['lat_y']
                 elevation_from_dsm = row['elevation_from_dsm']
-                polygon_id = row['polygon_id']
-                properties.append((lat_y, lon_x, elevation_from_dsm, polygon_id))
+                point_id = row['point_id']
+                properties.append((lat_y, lon_x, elevation_from_dsm, point_id))
 
         # Check if the first and last points are the same and remove the last point if they are
         if len(properties) > 1 and properties[0] == properties[-1]:
@@ -147,26 +147,26 @@ class BuildWaylinesWPML:
         action_group_id = 0
         touch_sky_count = 0
 
-        for idx, (lat_y, lon_x, wpt_elevation_from_dsm, polygon_id) in enumerate(self.wpt_csv_properties):
+        for idx, (lat_y, lon_x, wpt_elevation_from_dsm, point_id) in enumerate(self.wpt_csv_properties):
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx][2]
 
             # Standard sequence
             height = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach))
             self.addTreeFirstLastPlacemark(
-                base_index, lat_y, lon_x, height, polygon_id, '-90', action_group_id, base_index)
+                base_index, lat_y, lon_x, height, point_id, '-90', action_group_id, base_index)
             
             height = str(float(wpt_elevation_from_dsm) + float(config.buffer) + float(config.approach))
             self.addTreeApproachPlacemark(
-                base_index + 1, lat_y, lon_x, height, polygon_id)
+                base_index + 1, lat_y, lon_x, height, point_id)
 
             height = str(float(wpt_elevation_from_dsm) + float(config.buffer))
             self.addTreePhotosPlacemark(
-                base_index + 2, lat_y, lon_x, height, polygon_id, action_group_id + 1, base_index + 2)
+                base_index + 2, lat_y, lon_x, height, point_id, action_group_id + 1, base_index + 2)
             
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx+1][2]
             height = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach))
             self.addTreeFirstLastPlacemark(
-                base_index + 3, lat_y, lon_x, height, polygon_id, '-15', action_group_id + 2, base_index + 3)
+                base_index + 3, lat_y, lon_x, height, point_id, '-15', action_group_id + 2, base_index + 3)
             
             touch_sky_count += 1
 
@@ -174,11 +174,11 @@ class BuildWaylinesWPML:
             if config.touch_sky and touch_sky_count >= config.touch_sky_interval:
                 height = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach) + float(config.touch_sky_altitude))
                 self.addTouchSkyPlacemark(
-                    base_index + 4, lat_y, lon_x, height, polygon_id, '-90', action_group_id + 3, base_index + 4)
+                    base_index + 4, lat_y, lon_x, height, point_id, '-90', action_group_id + 3, base_index + 4)
                 
                 height = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach))
                 self.addTreeFirstLastPlacemark(
-                    base_index + 5, lat_y, lon_x, height, polygon_id, '-15', action_group_id + 4, base_index + 5)
+                    base_index + 5, lat_y, lon_x, height, point_id, '-15', action_group_id + 4, base_index + 5)
                 
                 base_index += 6  # Increment by 6 when touch-sky is added
                 action_group_id += 5  # Increment by 5 when touch-sky is added
@@ -188,9 +188,9 @@ class BuildWaylinesWPML:
                 action_group_id += 3  # Normal increment by 3
 
     # -------------------------------------------------------------------------
-    def addTreeFirstLastPlacemark(self, idx, lat_y, lon_x, height, polygon_id, gimbalPitchRotateAngle, actionGroupId, actionGroupIndex):
+    def addTreeFirstLastPlacemark(self, idx, lat_y, lon_x, height, point_id, gimbalPitchRotateAngle, actionGroupId, actionGroupIndex):
         # Add new Placemark elements for each coordinate
-        # for idx, (lat_y, lon_x, elevation_from_dsm, polygon_id) in enumerate(self.csv_properties):
+        # for idx, (lat_y, lon_x, elevation_from_dsm, point_id) in enumerate(self.csv_properties):
         placemark = ET.Element(f'{{{self.namespaces["kml"]}}}Placemark')
 
         point = ET.SubElement(placemark, f'{{{self.namespaces["kml"]}}}Point')
@@ -294,9 +294,9 @@ class BuildWaylinesWPML:
       return wpml_waypointGimbalHeadingParam
 
     # -------------------------------------------------------------------------
-    def addTreeApproachPlacemark(self, idx, lat_y, lon_x, height, polygon_id):
+    def addTreeApproachPlacemark(self, idx, lat_y, lon_x, height, point_id):
         # Add new Placemark elements for each coordinate
-        # for idx, (lat_y, lon_x, elevation_from_dsm, polygon_id) in enumerate(self.csv_properties):
+        # for idx, (lat_y, lon_x, elevation_from_dsm, point_id) in enumerate(self.csv_properties):
         placemark = ET.Element(f'{{{self.namespaces["kml"]}}}Placemark')
 
         point = ET.SubElement(placemark, f'{{{self.namespaces["kml"]}}}Point')
@@ -456,7 +456,7 @@ class BuildWaylinesWPML:
         return action
 
     # -------------------------------------------------------------------------
-    def addTreePhotosPlacemark(self, idx, lat_y, lon_x, elevation_from_dsm, polygon_id, actionGroupId, actionGroupIndex):
+    def addTreePhotosPlacemark(self, idx, lat_y, lon_x, elevation_from_dsm, point_id, actionGroupId, actionGroupIndex):
         placemark = ET.Element(f'{{{self.namespaces["kml"]}}}Placemark')
 
         point = ET.SubElement(placemark, f'{{{self.namespaces["kml"]}}}Point')
@@ -490,11 +490,11 @@ class BuildWaylinesWPML:
         placemark.append(wpml_actionGroup)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('0', '168', str(
-            polygon_id) + "zoom", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
+            point_id) + "zoom", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
         wpml_actionGroup.append(wpml_action)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('1', '24', str(
-            polygon_id), '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
+            point_id), '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
         wpml_actionGroup.append(wpml_action)
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
@@ -511,7 +511,7 @@ class BuildWaylinesWPML:
         self.folder.append(placemark)
     
     # -------------------------------------------------------------------------
-    def addTouchSkyPlacemark(self, idx, lat_y, lon_x, height, polygon_id, gimbalPitchRotateAngle, actionGroupId, actionGroupIndex):
+    def addTouchSkyPlacemark(self, idx, lat_y, lon_x, height, point_id, gimbalPitchRotateAngle, actionGroupId, actionGroupIndex):
         placemark = ET.Element(f'{{{self.namespaces["kml"]}}}Placemark')
 
         point = ET.SubElement(placemark, f'{{{self.namespaces["kml"]}}}Point')
