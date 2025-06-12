@@ -51,8 +51,6 @@ class BuildCSV:
         merged_gdf['lon_x'] = merged_gdf.geometry.x
         merged_gdf['lat_y'] = merged_gdf.geometry.y
         # Add placeholder columns if missing
-        if 'point_id' not in merged_gdf:
-            merged_gdf['point_id'] = 0
         if 'cluster_id' not in merged_gdf:
             merged_gdf['cluster_id'] = 0
         merged_gdf['elevation_from_dsm'] = merged_gdf['elev']
@@ -81,6 +79,10 @@ class BuildCSV:
         else:
             raise ValueError(f"Unsupported geometry type(s): {geom_type}. Input file should contain only Polygon, MultiPolygon or Point geometries.")
         
+        # Add 'point_id' column if missing
+        if 'point_id' not in features.columns:
+            features['point_id'] = features['FID'] if 'FID' in features.columns else features.index
+
         # If AOI is provided, filter features
         if self.aoi_path is not None:
             aoi = gpd.read_file(self.aoi_path)
