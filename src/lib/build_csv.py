@@ -2,46 +2,49 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
+import re
 
 from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+from pathlib import Path
 from rasterstats import zonal_stats
 from shapely.geometry import LineString
 
 class BuildCSV:
     # -------------------------------------------------------------------------
-    def __init__(self, features_path, dsm_path, espg_code, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_tree=3, takeoff_site_coords=None):
+    def __init__(self, features_path, dsm_path, epsg_code, aoi_path=None, aoi_index=1, aoi_qualifier="", version=0, buffer_path=10, buffer_tree=3, takeoff_site_coords=None):
         self.features_path = features_path
         self.dsm_path = dsm_path
-        self.espg_code = espg_code
+        self.epsg_code = epsg_code
         self.aoi_path = aoi_path
         self.aoi_index = aoi_index
         self.aoi_qualifier = aoi_qualifier
+        self.version = version
         self.buffer_path = buffer_path
         self.buffer_tree = buffer_tree
         self.takeoff_site_coords = takeoff_site_coords
-
+    
     # -------------------------------------------------------------------------
-    def run(self, output_gpkg_path=None, output_csv_path=None):
+    def run(self, output_folder=None, output_filename=None, export_to_gpkg=True, export_to_csv=True):
         """
         Full workflow: process features, DSM, TSP, checkpoints, and export results.
         """
-        # 1. Read features (with AOI filtering)
+        # 1. Read features (with AOI filtering if provided)
         features = self.read_features()
         # 2. Read DSM raster
         dsm = self.read_dsm()
-        # 3. Align CRS
+        # 3. Align CRS (if needed)
         features = self.align_features_to_dsm(features, dsm)
         # 4. Extract tree elevations
-        features = self.extract_features_elevations(features, dsm)
+        features = self.extract_features_elevations(features)
         # 5. Build distance matrix and get coordinates
         coords = np.array([[geom.x, geom.y] for geom in features.geometry])
-        distance_matrix = self.build_distance_matrix(features.geometry)
+        distance_matrix = self.build_distance_matrix(features.geometry.tolist())
         # 6. Solve TSP (optionally with takeoff site)
-        tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_site=self.takeoff_site, waypoints_coords=coords)
+        tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_site_coords=self.takeoff_site_coords, waypoints_coords=coords)
         # 7. Reorder features according to TSP
         waypoints = self.get_tsp_solution_df(features, tsp_route)
         # 8. Extract path checkpoints
-        checkpoints = self.extract_path_checkpoints(waypoints, dsm)
+        checkpoints = self.extract_path_checkpoints(waypoints)
         # 9. Interleave waypoints and checkpoints
         merged = self.merge_waypoints_and_checkpoints(waypoints, checkpoints)
         # 10. Transform to WGS84 for export
@@ -54,30 +57,53 @@ class BuildCSV:
         if 'cluster_id' not in merged_gdf:
             merged_gdf['cluster_id'] = 0
         merged_gdf['elevation_from_dsm'] = merged_gdf['elev']
-        merged_gdf['order'] = merged_gdf['order']
-        csv_df = merged_gdf[['point_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']].copy()
+        gpkg_gdf = merged_gdf.drop(columns=['elevation_from_dsm'])
+        gpkg_gdf = gpkg_gdf[gpkg_gdf['type'] != 'cpt']
+        csv_df = merged_gdf[['point_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']]
         # 12. Export
-        if output_gpkg_path:
-            self.export_to_gpkg(merged_gdf, output_gpkg_path)
-        if output_csv_path:
+        if output_filename is None:
+            input_filename = Path(self.features_path).stem
+            pattern = r'^[0-9a-z]{2,16}_(centroids|polygons)\d?$'
+            if not re.match(pattern, input_filename):
+                raise ValueError(
+                    f"""Input filename '{input_filename}' does not match the required pattern.
+                        Expected format: (drone_site)_(centroids|polygons)[version] - Regex: {pattern}
+                        Specify an output filename using the 'output_filename' argument to bypass naming rule.""")
+            drone_site = input_filename.split('_')[0]
+            output_filename = f"{drone_site}_wpt"
+            if self.aoi_qualifier and self.aoi_path is not None:
+                output_filename += f"{self.aoi_qualifier}"
+            if self.version != 0:
+                output_filename += f"{self.version}"
+        if output_folder is None:
+            output_folder = Path(self.features_path).parent
+            print(f"Output folder not specified, using features path directory: {output_folder}")
+        else:
+            output_folder = Path(output_folder)
+        output_gpkg_path = output_folder / f"{output_filename}.gpkg"
+        output_csv_path = output_folder / f"{output_filename}.csv"
+        if export_to_gpkg:
+            self.export_to_gpkg(gpkg_gdf, output_gpkg_path)
+        if export_to_csv:
             self.export_to_csv(csv_df, output_csv_path)
-        return merged_gdf, csv_df
-
+        
+        return
+    
     # -------------------------------------------------------------------------
     def read_features(self):
-        features = gpd.read_file(self.features_path)
+        features = gpd.read_file(self.features_path, engine='pyogrio', fid_as_index=True)
         
         # Check geometry type
         geom_type = features.geometry.geom_type.unique()
         if all(gt in ['Polygon', 'MultiPolygon'] for gt in geom_type):
             # Convert polygons to centroids
-            features['geometry'] = features.centroid
+            # features['geometry'] = features.centroid
             # or use representative_point() if you want a point inside the polygon
-            # features['geometry'] = features.geometry.representative_point()
+            features['geometry'] = features.geometry.representative_point()
         elif all(gt == 'Point' for gt in geom_type):
             pass
         else:
-            raise ValueError(f"Unsupported geometry type(s): {geom_type}. Input file should contain only Polygon, MultiPolygon or Point geometries.")
+            raise ValueError(f"Unsupported geometry type(s): {geom_type}. Input features file should contain only Polygon, MultiPolygon or Point geometries.")
         
         # Add 'point_id' column if missing
         if 'point_id' not in features.columns:
@@ -98,13 +124,13 @@ class BuildCSV:
             features = features[mask]
         
         return features
-
+    
     # -------------------------------------------------------------------------
     def read_dsm(self):
         """Read the DSM raster file using rasterio and return the raster object."""
         dsm = rasterio.open(self.dsm_path)
         return dsm
-
+    
     # -------------------------------------------------------------------------
     def align_features_to_dsm(self, features, dsm):
         """Ensure features are in the same CRS as the DSM raster. Returns reprojected features if needed."""
@@ -113,7 +139,7 @@ class BuildCSV:
             print(f"Warning: Features CRS ({features.crs}) does not match DSM CRS ({dsm_crs}). Reprojecting features to DSM CRS.")
             features = features.to_crs(dsm_crs)
         return features
-
+    
     # -------------------------------------------------------------------------
     def extract_features_elevations(self, features):
         """
@@ -128,15 +154,7 @@ class BuildCSV:
         features = features.copy()
         features["elev"] = max_elev
         return features
-
-    # -------------------------------------------------------------------------
-    def export_to_gpkg(self, gdf, output_path):
-        """
-        Export a GeoDataFrame to a GPKG file.
-        """
-        gdf.to_file(output_path, driver="GPKG", mode = "w")
-        print(f"Exported {len(gdf)} features to {output_path}")
-
+    
     # -------------------------------------------------------------------------
     def build_distance_matrix(self, features):
         """
@@ -151,7 +169,7 @@ class BuildCSV:
                     distance_matrix[i][j] = features[i].distance(features[j])
         
         return distance_matrix
-
+    
     # -------------------------------------------------------------------------
     @staticmethod
     def solve_tsp_ortools(distance_matrix, takeoff_site_coords=None, waypoints_coords=None):
@@ -200,7 +218,7 @@ class BuildCSV:
                 index = solution.Value(routing.NextVar(index))
             return route
         return None
-
+    
     # -------------------------------------------------------------------------
     def get_tsp_solution_df(self, features, route):
         """
@@ -209,12 +227,15 @@ class BuildCSV:
         # Reorder features according to the TSP route
         ordered_features = features.iloc[route].copy()
         ordered_features['order'] = range(1, len(route) + 1)
+        ordered_features['type'] = 'wpt'
+        cols = ['point_id', 'type', 'geometry', 'elev', 'order']
+        ordered_features = ordered_features[cols]
         return ordered_features
     
     # -------------------------------------------------------------------------
-    def extract_path_checkpoints(self, ordered_features, dsm):
+    def extract_path_checkpoints(self, ordered_features):
         """
-        For each consecutive pair of waypoints, create a buffered LINESTRING and extract the max DSM value.
+        For each consecutive pair of waypoints, create a buffered path and extract the max DSM value.
         Returns a DataFrame with checkpoint centroids and max elevation.
         """
         checkpoints = []
@@ -224,35 +245,32 @@ class BuildCSV:
         
         for i in range(len(coords) - 1):
             line = LineString([coords[i], coords[i+1]])
-            buffer = gpd.GeoSeries([line], crs=crs).buffer(self.buffer_path)
+            # buffer = gpd.GeoSeries([line], crs=crs).buffer(self.buffer_path)
+            buffer_gdf = gpd.GeoDataFrame(geometry=[line], crs=crs).buffer(self.buffer_path)
+            buffer_gdf = gpd.GeoDataFrame(geometry=buffer_gdf, crs=crs)
             # Use zonal_stats to get max elevation in buffer
-            stats = zonal_stats(buffer, dsm, stats=["max"])
+            stats = zonal_stats(buffer_gdf, self.dsm_path, stats=["max"])
             max_elev = stats[0]["max"]
             # Get centroid of buffer for checkpoint
-            centroid = buffer.centroid.iloc[0]
+            centroid = buffer_gdf.centroid.iloc[0]
             checkpoints.append({
+                "point_id": 0,
+                "type": "cpt",
                 "geometry": centroid,
                 "elev": max_elev,
-                "type": "cpt",
                 "order": 0
             })
         
         # Return as GeoDataFrame
         gdf_checkpoints = gpd.GeoDataFrame(checkpoints, crs=crs)
         return gdf_checkpoints
-
+    
     # -------------------------------------------------------------------------
     def merge_waypoints_and_checkpoints(self, waypoints, checkpoints):
         """
         Interleave waypoints and checkpoints for CSV export, assigning type 'wpt' and 'cpt'.
         Returns a DataFrame with all points in the correct order.
-        """
-        # Ensure both are sorted by 'order'
-        waypoints = waypoints.copy()
-        waypoints['type'] = 'wpt'
-        checkpoints = checkpoints.copy()
-        checkpoints['type'] = 'cpt'
-        
+        """     
         # Interleave: wpt, cpt, wpt, cpt, ..., wpt (last)
         merged = []
         
@@ -266,9 +284,17 @@ class BuildCSV:
         return merged_df
     
     # -------------------------------------------------------------------------
+    def export_to_gpkg(self, gdf, output_path):
+        """
+        Export a GeoDataFrame to a GPKG file.
+        """
+        gdf.to_file(output_path, driver="GPKG", mode="w")
+        print(f"Exported {len(gdf)} features to {output_path}")
+    
+    # -------------------------------------------------------------------------
     def export_to_csv(self, df, output_path):
         """
-        Export a DataFrame to CSV.
+        Export a DataFrame to CSV in the specified folder, naming the file after the feature file.
         """
         df.to_csv(output_path, index=False)
         print(f"Exported {len(df)} rows to {output_path}")
