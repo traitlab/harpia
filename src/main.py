@@ -1,6 +1,7 @@
-
 from pydantic import ValidationError
+from pathlib import Path
 
+from lib.build_csv import BuildCSV
 from lib.build_template_kml import BuildTemplateKML
 from lib.build_waylines_wpml import BuildWaylinesWPML
 from lib.config import config
@@ -8,8 +9,38 @@ from lib.create_kmz import CreateKMZ
 
 
 def main():
-
+    print("Running harpia")
     try:
+        # Step 1: Optionally run BuildCSV to generate the waypoints file
+        if config.features_path and config.dsm_path:
+            print("Building CSV from features and DSM")
+            build_csv = BuildCSV(
+                features_path=config.features_path,
+                dsm_path=config.dsm_path,
+                aoi_path=config.aoi_path,
+                aoi_index=config.aoi_index,
+                aoi_qualifier=config.aoi_qualifier,
+                buffer_path=config.buffer_path,
+                buffer_tree=config.buffer_tree,
+                takeoff_site_coords=config.takeoff_site_coords
+            )
+            
+            _, _, generated_csv_path = build_csv.run(
+                output_folder=config.output_folder,
+                output_filename=config.output_filename
+            )
+            
+            # Update config with the path of the generated CSV
+            config.points_csv_file_path = generated_csv_path
+            print(f"Waypoints CSV generated at: {config.points_csv_file_path}")
+
+        # Ensure we have a CSV file to proceed
+        if not config.points_csv_file_path or not Path(config.points_csv_file_path).exists():
+             print("Error: Waypoints CSV file not found or not generated. Aborting.")
+             return
+
+        # Step 2 & 3: Build KML and WPML from the CSV
+        print("Building KML and WPML from waypoints CSV")
         build_template_kml = BuildTemplateKML()
         build_template_kml.setup()
         build_template_kml.generate()
@@ -20,14 +51,15 @@ def main():
         build_waylines_wpml.generate()
         build_waylines_wpml.saveNewWPML()
 
+        # Step 4: Create the KMZ package
+        print("Creating KMZ file")
         create_kmz = CreateKMZ()
         create_kmz.create_kmz()
 
     except ValidationError as e:
         print(f"Configuration error: {e}")
-
-        # Your code here
-        print("Running lefolab-drone")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--config', '-s', type=str, required=False,
                     help='Path to the configuration file. Other choice is to provide the --csv option.')
 parser.add_argument('--csv', '-c', type=str, required=False,
-                    help='Path to the input CSV file containing waypoints. Other choice is to provide the --config option.')
+                    help='Path to the input CSV file containing waypoints. If not provided, it will be generated from features.')
 parser.add_argument('--output', '-o', type=str, required=None,
                     help='Output directory path (default: same directory as input file)')
 parser.add_argument('--approach', '-a', type=float, default=10,
@@ -40,6 +40,18 @@ parser.add_argument('--touch-sky-interval', '-n', type=int, default=10,
                     help='Number of placemarks between each touch-sky action (default: 10, min: 5)')
 parser.add_argument('--touch-sky-altitude', '-alt', type=float, default=100,
                     help='Altitude in meters above DSM for touch-sky action (default: 100, max: 200)')
+
+# Arguments for BuildCSV
+parser.add_argument('--features-path', type=str, help='Path to the input features file (e.g., GeoPackage, Shapefile).')
+parser.add_argument('--dsm-path', type=str, help='Path to the DSM raster file.')
+parser.add_argument('--aoi-path', type=str, help='Path to the AOI file to filter features.')
+parser.add_argument('--aoi-index', type=int, default=1, help='Index of the AOI polygon to use (1-based).')
+parser.add_argument('--aoi-qualifier', type=str, default="", help='Qualifier for the AOI to be used in output filenames.')
+parser.add_argument('--buffer-path', type=float, default=10, help='Buffer for path checkpoints in meters.')
+parser.add_argument('--buffer-tree', type=float, default=3, help='Buffer for tree features in meters.')
+parser.add_argument('--takeoff-site-coords', type=float, nargs=2, help='Coordinates (x, y) of the takeoff site.')
+parser.add_argument('--output-filename', type=str, help='Custom output filename (without extension).')
+
 parser.add_argument('--debug', '-d', action='store_true',
                     help='Run in debug mode (default: False)')
 
@@ -59,7 +71,7 @@ if args.touch_sky:
 
 # Set default output path to input file directory if not specified
 if args.output is None:
-    input_path = args.config if args.config else args.csv
+    input_path = args.config if args.config else args.features_path
     args.output = str(Path(input_path).parent)
 
 try:
@@ -75,6 +87,19 @@ try:
         
         # Create a default Config object with command line values
         config = Config(
+            # BuildCSV parameters
+            features_path=args.features_path,
+            dsm_path=args.dsm_path,
+            aoi_path=args.aoi_path,
+            aoi_index=args.aoi_index,
+            aoi_qualifier=args.aoi_qualifier,
+            buffer_path=args.buffer_path,
+            buffer_tree=args.buffer_tree,
+            takeoff_site_coords=args.takeoff_site_coords,
+            output_folder=args.output,
+            output_filename=args.output_filename,
+
+            # BuildKMZ parameters
             approach=args.approach,
             buffer=args.buffer,
             base_path=args.output,

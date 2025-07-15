@@ -11,20 +11,18 @@ from shapely.geometry import LineString
 
 class BuildCSV:
     # -------------------------------------------------------------------------
-    def __init__(self, features_path, dsm_path, epsg_code, aoi_path=None, aoi_index=1, aoi_qualifier="", version=0, buffer_path=10, buffer_tree=3, takeoff_site_coords=None):
+    def __init__(self, features_path, dsm_path, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_tree=3, takeoff_site_coords=None):
         self.features_path = features_path
         self.dsm_path = dsm_path
-        self.epsg_code = epsg_code
         self.aoi_path = aoi_path
         self.aoi_index = aoi_index
         self.aoi_qualifier = aoi_qualifier
-        self.version = version
         self.buffer_path = buffer_path
         self.buffer_tree = buffer_tree
         self.takeoff_site_coords = takeoff_site_coords
     
     # -------------------------------------------------------------------------
-    def run(self, output_folder=None, output_filename=None, export_to_gpkg=True, export_to_csv=True):
+    def run(self, output_folder=None, output_filename=None):
         """
         Full workflow: process features, DSM, TSP, checkpoints, and export results.
         """
@@ -63,18 +61,20 @@ class BuildCSV:
         # 12. Export
         if output_filename is None:
             input_filename = Path(self.features_path).stem
-            pattern = r'^[0-9a-z]{2,16}_(centroids|polygons)\d?$'
+            pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d?$'
             if not re.match(pattern, input_filename):
                 raise ValueError(
                     f"""Input filename '{input_filename}' does not match the required pattern.
-                        Expected format: (drone_site)_(centroids|polygons)[version] - Regex: {pattern}
+                        Expected format: (drone_site)_(centroids|points|polygons)[version] - Regex: {pattern}
                         Specify an output filename using the 'output_filename' argument to bypass naming rule.""")
             drone_site = input_filename.split('_')[0]
             output_filename = f"{drone_site}_wpt"
             if self.aoi_qualifier and self.aoi_path is not None:
                 output_filename += f"{self.aoi_qualifier}"
-            if self.version != 0:
-                output_filename += f"{self.version}"
+            # Extract version from filename if present (digit at the end)
+            version_match = re.search(r'\d$', input_filename)
+            if version_match:
+                output_filename += f"{version_match.group()}"
         if output_folder is None:
             output_folder = Path(self.features_path).parent
             print(f"Output folder not specified, using features path directory: {output_folder}")
@@ -82,12 +82,10 @@ class BuildCSV:
             output_folder = Path(output_folder)
         output_gpkg_path = output_folder / f"{output_filename}.gpkg"
         output_csv_path = output_folder / f"{output_filename}.csv"
-        if export_to_gpkg:
-            self.export_to_gpkg(gpkg_gdf, output_gpkg_path)
-        if export_to_csv:
-            self.export_to_csv(csv_df, output_csv_path)
+        self.export_to_gpkg(gpkg_gdf, output_gpkg_path)
+        self.export_to_csv(csv_df, output_csv_path)
         
-        return
+        return gpkg_gdf, csv_df, output_csv_path
     
     # -------------------------------------------------------------------------
     def read_features(self):
