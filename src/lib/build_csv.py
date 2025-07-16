@@ -22,7 +22,7 @@ class BuildCSV:
         self.takeoff_site_coords = takeoff_site_coords
     
     # -------------------------------------------------------------------------
-    def run(self, output_folder=None, output_filename=None):
+    def run(self, output_folder, output_filename=None):
         """
         Full workflow: process features, DSM, TSP, checkpoints, and export results.
         """
@@ -75,11 +75,7 @@ class BuildCSV:
             version_match = re.search(r'\d$', input_filename)
             if version_match:
                 output_filename += f"{version_match.group()}"
-        if output_folder is None:
-            output_folder = Path(self.features_path).parent
-            print(f"Output folder not specified, using features path directory: {output_folder}")
-        else:
-            output_folder = Path(output_folder)
+        output_folder = Path(output_folder)
         output_gpkg_path = output_folder / f"{output_filename}.gpkg"
         output_csv_path = output_folder / f"{output_filename}.csv"
         self.export_to_gpkg(gpkg_gdf, output_gpkg_path)
