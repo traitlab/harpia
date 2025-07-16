@@ -17,7 +17,7 @@ Converts waypoints into DJI-compatible mission files:
 - **KMZ Package**: Complete mission file ready for DJI Pilot 2 app
 
 ### Touch-Sky Feature
-Periodic altitude gain to regain signal and send recent RTK corrections to the drone:
+Periodically ascends to a higher altitude to re-establish signal and transmit updated RTK corrections to the drone:
 - **Purpose**: Fly to higher altitude periodically to restore connection between controller and drone before losing RTK signal
 - **Configurable**: Set interval (every N waypoints) and altitude (up to 200m above DSM)
 
