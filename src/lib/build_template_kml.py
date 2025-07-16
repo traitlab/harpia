@@ -6,9 +6,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from xml.dom.minidom import parseString
 
-from lib.config import config
+from src.lib.config import config
 
-from lib.WGS84toEGM96 import download_egm96, transform_to_egm96
+from src.lib.WGS84toEGM96 import download_egm96, transform_to_egm96
 
 class BuildTemplateKML:
 

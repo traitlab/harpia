@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from xml.dom.minidom import parseString
 
-from lib.config import config
+from src.lib.config import config
 
 class BuildWaylinesWPML:
 

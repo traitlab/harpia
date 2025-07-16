@@ -1,7 +1,7 @@
 import importlib
-import lib.build_csv
-importlib.reload(lib.build_csv)
-from lib.build_csv import BuildCSV
+import src.lib.build_csv
+importlib.reload(src.lib.build_csv)
+from src.lib.build_csv import BuildCSV
 
 # Set your file paths and parameters
 features_path = "D:/test_harpia/test_buildCSV/carpotroche_centroids.gpkg"

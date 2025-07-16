@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from model.config import Config
+from src.model.config import Config
 
 
 # -----------------------------------------------------------------------------

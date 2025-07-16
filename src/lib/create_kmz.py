@@ -3,7 +3,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from lib.config import config
+from src.lib.config import config
 
 # -----------------------------------------------------------------------------
 class CreateKMZ:
