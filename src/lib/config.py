@@ -103,7 +103,18 @@ try:
     # Create config object
     if args.config:
         config = load_config(args.config)
-        config.debug_mode = args.debug
+        
+        if config.output_filename:
+            config.base_name = args.output_filename
+        elif args.csv:
+            config.base_name = Path(config.csv).stem
+        elif args.features:
+            config.base_name = Path(config.features).stem
+        else:
+            config.base_name = "output"  # Fallback name
+        for char in ['/', '\\', '|', '?', '*', '.', '_']:
+            config.base_name = config.base_name.replace(char, '-')
+    
     else:
         # Get base_name from input file and replace special characters with '-'. Prioritize user-provided output_filename if available
         if args.output_filename:
