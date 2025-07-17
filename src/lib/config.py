@@ -134,9 +134,8 @@ try:
             # BuildKMZ parameters
             approach=10,  # Default value
             buffer=6,     # Default value
-            base_path=args.output_path,
             base_name=base_name,
-            points_csv_file_path=args.csv,
+            csv_path=args.csv,
             touch_sky=args.touch_sky,
             touch_sky_interval=args.touch_sky_interval,
             touch_sky_altitude=args.touch_sky_altitude,

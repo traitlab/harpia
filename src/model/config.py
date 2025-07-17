@@ -10,7 +10,7 @@ class Config(BaseModel):
     approach: int = 10
     buffer: int = 6
 
-    points_csv_file_path: Optional[FilePath] = None
+    csv_path: Optional[FilePath] = None
 
     touch_sky: bool = False
     touch_sky_interval: Optional[int] = 10

@@ -105,9 +105,9 @@ class BuildWaylinesWPML:
     def setup(self):
         # Read the coordinates from the CSV
         self.wpt_csv_properties = self.read_points_csv(
-            config.points_csv_file_path, 'wpt')
+            config.csv_path, 'wpt')
         self.cpt_csv_properties = self.read_points_csv(
-            config.points_csv_file_path, 'cpt')
+            config.csv_path, 'cpt')
         if len(self.wpt_csv_properties) < 2:
             self.cpt_csv_properties = self.wpt_csv_properties.copy()
             self.cpt_csv_properties.append(list(self.cpt_csv_properties[-1]))
@@ -568,7 +568,7 @@ class BuildWaylinesWPML:
         pretty_xml_str = self.beautify_xml()
 
         # Save the updated WPML file
-        wpml_path = Path(config.base_path) / config.base_name / \
+        wpml_path = Path(config.output_folder) / config.base_name / \
             config.output_wpml_file_path
         os.makedirs(os.path.dirname(
             wpml_path), exist_ok=True)
