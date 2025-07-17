@@ -42,9 +42,9 @@ parser.add_argument('--dsm', '-dsm', type=str, required=False,
                     help='Path to the DSM raster file.')
 parser.add_argument('--aoi', '-aoi', type=str, required=False,
                     help='Path to the AOI file to filter features.')
-parser.add_argument('--aoi-index', '-i', type=int, default=1,
+parser.add_argument('--aoi-index', '-i', type=int,
                     help='Index of the AOI polygon to use.')
-parser.add_argument('--aoi-qualifier', '-q', type=str, default="",
+parser.add_argument('--aoi-qualifier', '-q', type=str,
                     help='Qualifier for the AOI to be used in output filenames.')
 parser.add_argument('--takeoff-site-coords', '-to', type=float, nargs=2,
                      metavar=('X', 'Y'), required=False,

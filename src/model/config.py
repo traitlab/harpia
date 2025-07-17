@@ -24,11 +24,12 @@ class Config(BaseModel):
     features_path: Optional[FilePath] = None
     dsm_path: Optional[FilePath] = None
     aoi_path: Optional[FilePath] = None
-    aoi_index: Optional[int] = 1
-    aoi_qualifier: Optional[str] = ""
+    aoi_index: Optional[int]
+    aoi_qualifier: Optional[str]
     buffer_path: Optional[int] = 10
     buffer_tree: Optional[int] = 3
     takeoff_site_coords: Optional[List[float]] = None
+
     output_folder: Optional[Path] = None
     output_filename: Optional[str] = None
 
