@@ -7,7 +7,7 @@ import re
 from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 from pathlib import Path
 from rasterstats import zonal_stats
-from shapely.geometry import LineString
+from shapely.geometry import LineString, box
 
 class BuildCSV:
     # -------------------------------------------------------------------------
@@ -32,23 +32,25 @@ class BuildCSV:
         dsm = self.read_dsm()
         # 3. Align CRS (if needed)
         features = self.align_features_to_dsm(features, dsm)
-        # 4. Extract tree elevations
+        # 4. Check for overlap
+        self.check_features_overlap_dsm(features, dsm)
+        # 5. Extract tree elevations
         features = self.extract_features_elevations(features)
-        # 5. Build distance matrix and get coordinates
+        # 6. Build distance matrix and get coordinates
         coords = np.array([[geom.x, geom.y] for geom in features.geometry])
         distance_matrix = self.build_distance_matrix(features.geometry.tolist())
-        # 6. Solve TSP (optionally with takeoff site)
+        # 7. Solve TSP (optionally with takeoff site)
         tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_site_coords=self.takeoff_site_coords, waypoints_coords=coords)
-        # 7. Reorder features according to TSP
+        # 8. Reorder features according to TSP
         waypoints = self.get_tsp_solution_df(features, tsp_route)
-        # 8. Extract path checkpoints
+        # 9. Extract path checkpoints
         checkpoints = self.extract_path_checkpoints(waypoints)
-        # 9. Interleave waypoints and checkpoints
+        # 10. Interleave waypoints and checkpoints
         merged = self.merge_waypoints_and_checkpoints(waypoints, checkpoints)
-        # 10. Transform to WGS84 for export
+        # 11. Transform to WGS84 for export
         merged_gdf = gpd.GeoDataFrame(merged, geometry='geometry', crs=features.crs)
         merged_gdf = self.to_wgs84(merged_gdf)
-        # 11. Format for CSV: extract lon/lat, rename columns, drop geometry
+        # 12. Format for CSV: extract lon/lat, rename columns, drop geometry
         merged_gdf['lon_x'] = merged_gdf.geometry.x
         merged_gdf['lat_y'] = merged_gdf.geometry.y
         # Add placeholder columns if missing
@@ -133,6 +135,31 @@ class BuildCSV:
             print(f"Warning: Features CRS ({features.crs}) does not match DSM CRS ({dsm_crs}). Reprojecting features to DSM CRS.")
             features = features.to_crs(dsm_crs)
         return features
+    
+    # -------------------------------------------------------------------------
+    def check_features_overlap_dsm(self, features, dsm):
+        """
+        Check if all features are within the DSM's bounding box.
+        Raises a ValueError if any feature is outside the DSM bounds.
+        """
+        dsm_bounds = dsm.bounds
+        dsm_box = box(dsm_bounds.left, dsm_bounds.bottom, dsm_bounds.right, dsm_bounds.top)
+        
+        # Check which features are not within the DSM box
+        non_overlapping_features = features[~features.geometry.within(dsm_box)]
+        
+        if not non_overlapping_features.empty:
+            num_outside = len(non_overlapping_features)
+            total_num = len(features)
+            # List some of the non-overlapping feature IDs
+            ids_outside = non_overlapping_features['point_id'].tolist()
+            error_message = (
+                f"{num_outside} out of {total_num} features are outside the DSM extent.\n"
+                f"Non-overlapping feature IDs: {ids_outside[:10]}"
+            )
+            if num_outside > 10:
+                error_message += " (and others)..."
+            raise ValueError(error_message)
     
     # -------------------------------------------------------------------------
     def extract_features_elevations(self, features):
@@ -291,7 +318,6 @@ class BuildCSV:
         Export a DataFrame to CSV in the specified folder, naming the file after the feature file.
         """
         df.to_csv(output_path, index=False)
-        print(f"Exported {len(df)} rows to {output_path}")
     
     # -------------------------------------------------------------------------
     def to_wgs84(self, gdf):
