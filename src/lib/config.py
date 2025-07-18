@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -87,47 +88,12 @@ if args.features and not args.dsm:
 if (args.aoi_index or args.aoi_qualifier) and not args.aoi:
     parser.error("--aoi must be provided when --aoi-index or --aoi-qualifier is specified")
 
-# Set default output path to input file directory if not specified
-if args.output_path is None:
-    if args.config:
-        args.output_path = str(Path(args.config).parent)
-    elif args.csv:
-        args.output_path = str(Path(args.csv).parent)
-    elif args.features:
-        args.output_path = str(Path(args.features).parent)
-    else:
-        # Fallback to current working directory
-        args.output_path = "."
-
 try:
     # Create config object
     if args.config:
         config = load_config(args.config)
-        
-        if config.output_filename:
-            config.base_name = args.output_filename
-        elif args.csv:
-            config.base_name = Path(config.csv).stem
-        elif args.features:
-            config.base_name = Path(config.features).stem
-        else:
-            config.base_name = "output"  # Fallback name
-        for char in ['/', '\\', '|', '?', '*', '.', '_']:
-            config.base_name = config.base_name.replace(char, '-')
     
     else:
-        # Get base_name from input file and replace special characters with '-'. Prioritize user-provided output_filename if available
-        if args.output_filename:
-            base_name = args.output_filename
-        elif args.csv:
-            base_name = Path(args.csv).stem
-        elif args.features:
-            base_name = Path(args.features).stem
-        else:
-            base_name = "output"  # Fallback name
-        for char in ['/', '\\', '|', '?', '*', '.', '_']:
-            base_name = base_name.replace(char, '-')
-        
         # Create a default Config object with command line values
         config = Config(
             # BuildCSV parameters
@@ -145,13 +111,45 @@ try:
             # BuildKMZ parameters
             approach=10,  # Default value
             buffer=6,     # Default value
-            base_name=base_name,
             csv_path=args.csv,
             touch_sky=args.touch_sky,
             touch_sky_interval=args.touch_sky_interval,
             touch_sky_altitude=args.touch_sky_altitude,
             debug_mode=args.debug
         )
+    
+    # Set default output path to input file directory if not specified
+    if not config.output_folder:
+        if config.csv_path:
+            config.output_folder = str(Path(config.csv_path).parent)
+        elif config.features_path:
+            config.output_folder = str(Path(config.features_path).parent)
+
+    # Set default output filename if not specified
+    if not config.output_filename:
+        if config.csv_path:
+            input_filename = Path(config.csv_path).stem
+        elif config.features_path:
+            input_filename = Path(config.features_path).stem
+        else:
+            raise ValueError("Either 'csv_path' or 'features_path' must be provided")
+
+        pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d?$'
+        if not re.match(pattern, input_filename):
+            raise ValueError(
+                f"""Input filename '{input_filename}' does not match the required pattern.
+                Expected format: (drone_site)_(centroids|points|polygons)[version]
+                Regex: {pattern}\n
+                Specify an output filename using the 'output_filename' argument to bypass naming rule."""
+            )
+        drone_site = input_filename.split('_')[0]
+        config.output_filename = f"{drone_site}_wpt"
+        if config.aoi_qualifier and config.aoi_path is not None:
+            config.output_filename += f"{config.aoi_qualifier}"
+        # Extract version from filename if present (digit at the end)
+        version_match = re.search(r'\d$', input_filename)
+        if version_match:
+            config.output_filename += f"{version_match.group()}"
 
 except ValidationError as e:
     print("Error: Invalid configuration")

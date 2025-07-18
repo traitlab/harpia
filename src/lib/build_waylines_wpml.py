@@ -568,7 +568,7 @@ class BuildWaylinesWPML:
         pretty_xml_str = self.beautify_xml()
 
         # Save the updated WPML file
-        wpml_path = Path(config.output_folder) / config.base_name / \
+        wpml_path = Path(config.output_folder) / config.output_filename / \
             config.output_wpml_file_path
         os.makedirs(os.path.dirname(
             wpml_path), exist_ok=True)

@@ -522,7 +522,7 @@ class BuildTemplateKML:
         pretty_xml_str = self.beautify_xml()
 
         # Save the updated KML file
-        kml_path = Path(config.output_folder) / config.base_name / \
+        kml_path = Path(config.output_folder) / config.output_filename / \
             config.output_kml_file_path
         os.makedirs(os.path.dirname(
             kml_path), exist_ok=True)
