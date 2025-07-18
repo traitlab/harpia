@@ -31,11 +31,11 @@ def main():
             )
             
             # Update config with the path of the generated CSV
-            config.points_csv_file_path = generated_csv_path
-            print(f"Waypoints CSV generated at: {config.points_csv_file_path}")
+            config.csv_path = generated_csv_path
+            print(f"Waypoints CSV generated at: {config.csv_path}")
 
         # Ensure we have a CSV file to proceed
-        if not config.points_csv_file_path or not Path(config.points_csv_file_path).exists():
+        if not config.csv_path or not Path(config.csv_path).exists():
              print("Error: Waypoints CSV file not found or not generated. Aborting.")
              return
 
