@@ -67,6 +67,7 @@ class BuildCSV:
         csv_df = merged_gdf[['point_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']]
         # 14. Export
         output_folder = Path(output_folder)
+        output_folder.mkdir(parents=True, exist_ok=True)  # Create directory if it doesn't exist
         output_gpkg_path = output_folder / f"{output_filename}.gpkg"
         output_csv_path = output_folder / f"{output_filename}.csv"
         self.export_to_gpkg(gpkg_gdf, output_gpkg_path)
