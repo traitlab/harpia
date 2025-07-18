@@ -65,16 +65,13 @@ args = parser.parse_args()
 # Validate that either --config or --csv or --features is provided
 if not args.config and not args.csv and not args.features:
     parser.error("Either --config, --csv or --features must be provided")
-    sys.exit(1)
 
 # Validate that only one of --config, --csv or --features is provided
 if args.config and (args.csv or args.features):
     parser.error("Cannot use --config with --csv or --features")
-    sys.exit(1)
 
 if args.csv and args.features:
     parser.error("Cannot use both --csv and --features")
-    sys.exit(1)
 
 # Validate touch-sky parameters
 if args.touch_sky:
@@ -89,6 +86,15 @@ if args.features and not args.dsm:
 
 if (args.aoi_index or args.aoi_qualifier) and not args.aoi:
     parser.error("--aoi must be provided when --aoi-index or --aoi-qualifier is specified")
+
+if args.aoi_index and not args.aoi_qualifier:
+    parser.error("--aoi-index requires --aoi-qualifier to be specified")
+
+if args.aoi_qualifier and not args.aoi_index:
+    parser.error("--aoi-qualifier requires --aoi-index to be specified")
+
+if args.takeoff_coords_projected and not args.takeoff_coords:
+    parser.error("--takeoff-coords must be provided when --takeoff-coords-projected is True")
 
 try:
     # Create config object
@@ -120,6 +126,33 @@ try:
             touch_sky_altitude=args.touch_sky_altitude,
             debug_mode=args.debug
         )
+    
+    # Validate config values
+    if config.csv_path and config.features_path:
+        raise ValueError("Cannot use both csv_path and features_path")
+    
+    # Validate touch-sky parameters
+    if config.touch_sky:
+        if config.touch_sky_interval < 5:
+            raise ValueError("touch_sky_interval must be at least 5")
+        if config.touch_sky_altitude > 200:
+            raise ValueError("touch_sky_altitude cannot exceed 200 meters")
+
+    # Validate BuildCSV parameters
+    if config.features_path and not config.dsm_path:
+        raise ValueError("DSM path must be provided when features path is specified")
+
+    if (config.aoi_index or config.aoi_qualifier) and not config.aoi_path:
+        raise ValueError("AOI path must be provided when aoi_index or aoi_qualifier is specified")
+
+    if config.aoi_index and not config.aoi_qualifier:
+        raise ValueError("aoi_index requires aoi_qualifier to be specified")
+
+    if config.aoi_qualifier and not config.aoi_index:
+        raise ValueError("aoi_qualifier requires aoi_index to be specified")
+    
+    if config.takeoff_coords_projected and not config.takeoff_coords:
+        raise ValueError("takeoff_coords must be provided when takeoff_coords_projected is True")
     
     # Set default output path to input file directory if not specified
     if not config.output_folder:
