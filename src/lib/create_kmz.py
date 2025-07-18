@@ -12,8 +12,9 @@ class CreateKMZ:
         # File path
         self.wpmz_dir = Path(config.output_folder) / config.output_filename / f"wpmz"
         
+        dji_name = config.output_filename
         for char in ['/', '\\', '|', '?', '*', '.', '_']:
-            dji_name = config.output_filename.replace(char, '-')
+            dji_name = dji_name.replace(char, '-')
 
         # Add datetime to filename when in debug mode
         if config.debug_mode == False:
