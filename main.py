@@ -22,7 +22,8 @@ def main():
                 aoi_qualifier=config.aoi_qualifier,
                 buffer_path=config.buffer_path,
                 buffer_tree=config.buffer_tree,
-                takeoff_site_coords=config.takeoff_site_coords
+                takeoff_coords=config.takeoff_coords,
+                takeoff_coords_projected=config.takeoff_coords_projected
             )
             
             _, _, generated_csv_path = build_csv.run(

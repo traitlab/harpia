@@ -47,9 +47,11 @@ parser.add_argument('--aoi-index', '-i', type=int,
                     help='Index of the AOI polygon to use.')
 parser.add_argument('--aoi-qualifier', '-q', type=str,
                     help='Qualifier for the AOI to be used in output filenames.')
-parser.add_argument('--takeoff-site-coords', '-to', type=float, nargs=2,
-                     metavar=('X', 'Y'), required=False,
-                     help='Coordinates (x, y) of the takeoff site.')
+parser.add_argument('--takeoff-coords', '-to', type=float, nargs=2,
+                    metavar=('X', 'Y'), required=False,
+                    help='Coordinates (x, y) of the takeoff site.')
+parser.add_argument('--takeoff-coords-projected', '-proj', action='store_true', default=False,
+                    help='Flag to indicate takeoff coordinates are in projected CRS (same as DSM). Default: False (WGS84)')
 parser.add_argument('--output-path', '-op', type=str, required=False,
                     help='Custom output directory path (default: same directory as input file)')
 parser.add_argument('--output-filename', '-of', type=str, required=False,
@@ -104,7 +106,8 @@ try:
             aoi_qualifier=args.aoi_qualifier,
             buffer_path=10,  # Default value
             buffer_tree=3,   # Default value
-            takeoff_site_coords=args.takeoff_site_coords,
+            takeoff_coords=args.takeoff_coords,
+            takeoff_coords_projected=args.takeoff_coords_projected,
             output_folder=args.output_path,
             output_filename=args.output_filename,
 

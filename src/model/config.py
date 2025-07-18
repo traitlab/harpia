@@ -28,7 +28,8 @@ class Config(BaseModel):
     aoi_qualifier: Optional[str]
     buffer_path: Optional[int] = 10
     buffer_tree: Optional[int] = 3
-    takeoff_site_coords: Optional[List[float]] = None
+    takeoff_coords: Optional[List[float]] = None
+    takeoff_coords_projected: bool = False  # Default: WGS84 coordinates
 
     output_folder: Optional[Path] = None
     output_filename: Optional[str] = None

@@ -7,11 +7,11 @@ import re
 from ortools.constraint_solver import routing_enums_pb2, pywrapcp
 from pathlib import Path
 from rasterstats import zonal_stats
-from shapely.geometry import LineString, box
+from shapely.geometry import box, LineString, Point
 
 class BuildCSV:
     # -------------------------------------------------------------------------
-    def __init__(self, features_path, dsm_path, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_tree=3, takeoff_site_coords=None):
+    def __init__(self, features_path, dsm_path, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_tree=3, takeoff_coords=None, takeoff_coords_projected=False):
         self.features_path = features_path
         self.dsm_path = dsm_path
         self.aoi_path = aoi_path
@@ -19,10 +19,11 @@ class BuildCSV:
         self.aoi_qualifier = aoi_qualifier
         self.buffer_path = buffer_path
         self.buffer_tree = buffer_tree
-        self.takeoff_site_coords = takeoff_site_coords
+        self.takeoff_coords = takeoff_coords
+        self.takeoff_coords_projected = takeoff_coords_projected
     
     # -------------------------------------------------------------------------
-    def run(self, output_folder, output_filename=None):
+    def run(self, output_folder, output_filename):
         """
         Full workflow: process features, DSM, TSP, checkpoints, and export results.
         """
@@ -39,18 +40,22 @@ class BuildCSV:
         # 6. Build distance matrix and get coordinates
         coords = np.array([[geom.x, geom.y] for geom in features.geometry])
         distance_matrix = self.build_distance_matrix(features.geometry.tolist())
-        # 7. Solve TSP (optionally with takeoff site)
-        tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_site_coords=self.takeoff_site_coords, waypoints_coords=coords)
-        # 8. Reorder features according to TSP
+        # 7. Transform takeoff coordinates to DSM CRS if needed
+        takeoff_coords_dsm = None
+        if self.takeoff_coords is not None:
+            takeoff_coords_dsm = self._transform_takeoff_coords_to_dsm_crs(self.takeoff_coords, dsm.crs)
+        # 8. Solve TSP (optionally with takeoff site)
+        tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_coords=takeoff_coords_dsm, waypoints_coords=coords)
+        # 9. Reorder features according to TSP
         waypoints = self.get_tsp_solution_df(features, tsp_route)
-        # 9. Extract path checkpoints
+        # 10. Extract path checkpoints
         checkpoints = self.extract_path_checkpoints(waypoints)
-        # 10. Interleave waypoints and checkpoints
+        # 11. Interleave waypoints and checkpoints
         merged = self.merge_waypoints_and_checkpoints(waypoints, checkpoints)
-        # 11. Transform to WGS84 for export
+        # 12. Transform to WGS84 for export
         merged_gdf = gpd.GeoDataFrame(merged, geometry='geometry', crs=features.crs)
         merged_gdf = self.to_wgs84(merged_gdf)
-        # 12. Format for CSV: extract lon/lat, rename columns, drop geometry
+        # 13. Format for CSV: extract lon/lat, rename columns, drop geometry
         merged_gdf['lon_x'] = merged_gdf.geometry.x
         merged_gdf['lat_y'] = merged_gdf.geometry.y
         # Add placeholder columns if missing
@@ -60,23 +65,7 @@ class BuildCSV:
         gpkg_gdf = merged_gdf.drop(columns=['elevation_from_dsm'])
         gpkg_gdf = gpkg_gdf[gpkg_gdf['type'] != 'cpt']
         csv_df = merged_gdf[['point_id', 'cluster_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm', 'order']]
-        # 12. Export
-        if output_filename is None:
-            input_filename = Path(self.features_path).stem
-            pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d?$'
-            if not re.match(pattern, input_filename):
-                raise ValueError(
-                    f"""Input filename '{input_filename}' does not match the required pattern.
-                        Expected format: (drone_site)_(centroids|points|polygons)[version] - Regex: {pattern}
-                        Specify an output filename using the 'output_filename' argument to bypass naming rule.""")
-            drone_site = input_filename.split('_')[0]
-            output_filename = f"{drone_site}_wpt"
-            if self.aoi_qualifier and self.aoi_path is not None:
-                output_filename += f"{self.aoi_qualifier}"
-            # Extract version from filename if present (digit at the end)
-            version_match = re.search(r'\d$', input_filename)
-            if version_match:
-                output_filename += f"{version_match.group()}"
+        # 14. Export
         output_folder = Path(output_folder)
         output_gpkg_path = output_folder / f"{output_filename}.gpkg"
         output_csv_path = output_folder / f"{output_filename}.csv"
@@ -192,19 +181,41 @@ class BuildCSV:
         return distance_matrix
     
     # -------------------------------------------------------------------------
+    def _transform_takeoff_coords_to_dsm_crs(self, takeoff_coords, dsm_crs):
+        """
+        Transform takeoff coordinates to DSM CRS if needed.
+        If takeoff_coords_projected=False (default), assumes WGS84 and transforms to DSM CRS.
+        If takeoff_coords_projected=True, assumes coordinates are already in DSM CRS.
+        """
+        if not self.takeoff_coords_projected:
+            # Coordinates are in WGS84, transform to DSM CRS
+            point_wgs84 = gpd.GeoDataFrame(
+                geometry=[Point(takeoff_coords[0], takeoff_coords[1])], 
+                crs="EPSG:4326"
+            )
+            point_dsm_crs = point_wgs84.to_crs(dsm_crs)
+            transformed_coords = [point_dsm_crs.geometry.iloc[0].x, point_dsm_crs.geometry.iloc[0].y]
+            print(f"Transformed takeoff coordinates from WGS84 {takeoff_coords} to {dsm_crs} {transformed_coords}")
+            return transformed_coords
+        else:
+            # Coordinates are already in DSM CRS (projected)
+            print(f"Using takeoff coordinates as-is (assumed to be in DSM CRS): {takeoff_coords}")
+            return takeoff_coords
+    
+    # -------------------------------------------------------------------------
     @staticmethod
-    def solve_tsp_ortools(distance_matrix, takeoff_site_coords=None, waypoints_coords=None):
+    def solve_tsp_ortools(distance_matrix, takeoff_coords=None, waypoints_coords=None):
         """
         Solve TSP using Google OR-Tools. Scales distances by 1000 to use integers.
-        If takeoff_site_coords and waypoints_coords are provided, use takeoff site as the start and find the nearest waypoint.
+        If takeoff_coords and waypoints_coords are provided, use takeoff site as the start and find the nearest waypoint.
         """
         # Scale the distance matrix by 1000 and convert to int
         scaled_matrix = (distance_matrix * 1000).astype(int)
         
         start_index = 0
-        if takeoff_site_coords is not None and waypoints_coords is not None:
+        if takeoff_coords is not None and waypoints_coords is not None:
             # Compute distances from takeoff site to all waypoints
-            takeoff = np.array(takeoff_site_coords)
+            takeoff = np.array(takeoff_coords)
             dists = np.linalg.norm(waypoints_coords - takeoff, axis=1)
             start_index = np.argmin(dists)
         manager = pywrapcp.RoutingIndexManager(len(scaled_matrix), 1, start_index)

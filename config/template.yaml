@@ -48,7 +48,12 @@ buffer_tree: 3
 
 # Coordinates (e.g., [longitude, latitude] or [x, y]) of the takeoff site.
 # This helps optimize the TSP route starting point.
-takeoff_site_coords: null # e.g., [-73.5558, 45.5572]
+takeoff_coordss: null # e.g., [-73.5558, 45.5572]
+
+# Flag to indicate if takeoff coordinates are in projected CRS (same as DSM).
+# If false (default), coordinates are assumed to be in WGS84 and will be transformed.
+# If true, coordinates are assumed to be in the same CRS as the DSM.
+takeoff_coords_projected: false
 
 # -----------------------------------------------------------------------------
 # Touch Sky Feature

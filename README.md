@@ -82,7 +82,8 @@ aoi_qualifier: north # Optional
 
 buffer_path: 10 # Optional
 buffer_tree: 3 # Optional
-takeoff_site_coords: [-73.5558, 45.5572]  # Optional
+takeoff_coords: [-73.5558, 45.5572]  # Optional
+takeoff_coords_projected: false  # Optional
 
 # Touch-sky settings
 touch_sky: false
@@ -118,6 +119,7 @@ debug_mode: false
 - `--buffer-path`: Buffer for path checkpoints in meters (default: 10)
 - `--buffer-tree`: Buffer for tree features in meters (default: 3)
 - `--takeoff-site-coords, -to`: Takeoff site coordinates as two floats: x y
+- `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (same as DSM). Default: False (WGS84)
 
 #### Touch-Sky Parameters
 - `--touch-sky, -ts`: Enable touch-sky feature (default: false)
