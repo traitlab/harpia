@@ -3,23 +3,11 @@
 # -----------------------------------------------------------------------------
 # General Settings
 # -----------------------------------------------------------------------------
-# Approach height for waypoints (value added above the buffer height).
+# Approach height for waypoints (value added to the buffer height).
 approach: 10
 
 # Buffer height above features elevation from DSM for pictures.
 buffer: 6
-
-# -----------------------------------------------------------------------------
-# Touch Sky Feature
-# -----------------------------------------------------------------------------
-# Enable or disable the "touch sky" feature, which makes the drone fly up periodically.
-touch_sky: false
-
-# Number of waypoints between each "touch sky" action.
-touch_sky_interval: 10
-
-# Altitude in meters for the "touch sky" action.
-touch_sky_altitude: 100
 
 # -----------------------------------------------------------------------------
 # Input Waypoints (Optional)
@@ -63,12 +51,24 @@ buffer_tree: 3
 takeoff_site_coords: null # e.g., [-73.5558, 45.5572]
 
 # -----------------------------------------------------------------------------
+# Touch Sky Feature
+# -----------------------------------------------------------------------------
+# Enable or disable the "touch sky" feature, which makes the drone fly up periodically.
+touch_sky: false
+
+# Number of waypoints between each "touch sky" action.
+touch_sky_interval: 10
+
+# Altitude in meters for the "touch sky" action.
+touch_sky_altitude: 100
+
+# -----------------------------------------------------------------------------
 # Output Settings (Optional)
 # -----------------------------------------------------------------------------
-# Custom output directory path. If not set, defaults to the input file's directory.
+# Custom output directory path. If not set, default is input file (either CSV or features) directory.
 output_folder: null # e.g., 'path/to/output'
 
-# Custom output filename (without extension). If not set, defaults to the input file's name.
+# Custom output filename (without extension). If not set, default is input file (either CSV or features) name.
 output_filename: null # e.g., 'my_mission'
 
 # -----------------------------------------------------------------------------
