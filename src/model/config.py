@@ -24,8 +24,8 @@ class Config(BaseModel):
     features_path: Optional[FilePath] = None
     dsm_path: Optional[FilePath] = None
     aoi_path: Optional[FilePath] = None
-    aoi_index: Optional[int]
-    aoi_qualifier: Optional[str]
+    aoi_index: Optional[int] = None
+    aoi_qualifier: Optional[str] = None
     buffer_path: Optional[int] = 10
     buffer_tree: Optional[int] = 3
     takeoff_coords: Optional[List[float]] = None
