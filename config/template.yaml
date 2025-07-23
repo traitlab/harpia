@@ -1,98 +1,120 @@
 # Harpia Configuration File
 
-# -----------------------------------------------------------------------------
-# General Settings
-# -----------------------------------------------------------------------------
-# Approach height for waypoints (value added to the buffer height).
-approach: 10
+# ==============================================================================
+# INPUT/OUTPUT SETTINGS
+# ==============================================================================
+# Data sources and output configuration
+# NOTE: Either csv_path OR features_path must be provided
 
-# Buffer height above features elevation from DSM for pictures.
-buffer: 6
-
-# -----------------------------------------------------------------------------
-# Input Waypoints (Optional)
-# -----------------------------------------------------------------------------
+# Option 1: Direct waypoints input
 # Path to a pre-existing CSV file with waypoints in the right format.
 # If this is provided, the feature-based waypoint generation step will be skipped.
 csv_path: null # e.g., 'path/to/waypoints.csv'
 
-# -----------------------------------------------------------------------------
-# Feature-based Waypoint Generation (Optional)
-# -----------------------------------------------------------------------------
-# Path to the input features file.
+# Option 2: Feature-based waypoint generation  
+# Path to the input features file (GeoPackage, Shapefile, etc.)
 features_path: null # e.g., 'path/to/features.gpkg'
 
 # Path to the Digital Surface Model (DSM) raster file.
+# REQUIRED when using features_path for waypoint generation
 dsm_path: null # e.g., 'path/to/dsm.tif'
 
-# -----------------------------------------------------------------------------
-# Area of Interest (AOI) Settings (Optional, only if feature-based waypoint generation)
-# -----------------------------------------------------------------------------
-# Path to an AOI file to filter features.
-aoi_path: null # e.g., 'path/to/aoi.gpkg'
-
-# Index of the specific AOI polygon to use.
-aoi_index: null # e.g., 1
-
-# A qualifier string to be added to output filenames when an AOI is used.
-aoi_qualifier: null # e.g., 'north'
-
-# -----------------------------------------------------------------------------
-# Elevation Buffer and Takeoff Settings (Needed only if using feature-based waypoint generation)
-# -----------------------------------------------------------------------------
-# Buffer around the flight path to find minimal elevation above obstacles for checkpoint.
-buffer_path: 10
-
-# Buffer around each tree/feature for calculating its elevation from the DSM.
-buffer_tree: 3
-
-# Coordinates (e.g., [longitude, latitude] or [x, y]) of the takeoff site.
-# This helps optimize the TSP route starting point.
-takeoff_coordss: null # e.g., [-73.5558, 45.5572]
-
-# Flag to indicate if takeoff coordinates are in projected CRS (same as DSM).
-# If false (default), coordinates are assumed to be in WGS84 and will be transformed.
-# If true, coordinates are assumed to be in the same CRS as the DSM.
-takeoff_coords_projected: false
-
-# -----------------------------------------------------------------------------
-# Touch Sky Feature
-# -----------------------------------------------------------------------------
-# Enable or disable the "touch sky" feature, which makes the drone fly up periodically.
-touch_sky: false
-
-# Number of waypoints between each "touch sky" action.
-touch_sky_interval: 10
-
-# Altitude in meters for the "touch sky" action.
-touch_sky_altitude: 100
-
-# -----------------------------------------------------------------------------
-# Output Settings (Optional)
-# -----------------------------------------------------------------------------
+# Output configuration
 # Custom output directory path. If not set, default is input file (either CSV or features) directory.
 output_folder: null # e.g., 'path/to/output'
 
 # Custom output filename (without extension). If not set, default is input file (either CSV or features) name.
 output_filename: null # e.g., 'my_mission'
 
-# -----------------------------------------------------------------------------
-# KML/WPML Model and Output Relative Paths (Advanced settings, if running from different directory)
-# -----------------------------------------------------------------------------
-# Path to the template KML file.
+# ==============================================================================
+# FLIGHT PARAMETERS
+# ==============================================================================
+# Drone flight behavior and altitude settings
+
+# Buffer height above the feature's DSM elevation (meters)
+# The pictures will be taken at this height above the feature
+buffer: 6
+
+# Additional approach height added above the buffer (meters)
+# This is the extra altitude for safety when drone descends to buffer height
+approach: 10
+
+# ==============================================================================
+# WAYPOINT GENERATION SETTINGS
+# ==============================================================================
+# Feature processing and route optimization parameters
+# NOTE: These settings only apply when using features_path
+
+# Buffer around the flight path to find minimal elevation above obstacles for checkpoints
+buffer_path: 10
+
+# Buffer around each tree/feature for calculating its elevation from the DSM
+buffer_tree: 3
+
+# Takeoff site coordinates for route optimization
+# Coordinates can be [longitude, latitude] (WGS84) or [x, y] (projected CRS)
+# This helps optimize the TSP route starting point
+takeoff_coords: null # e.g., [-73.55588, 45.55729] or [612709, 5045875]
+
+# Coordinate system flag for takeoff coordinates
+# false (default): coordinates are in WGS84 and will be transformed to DSM CRS
+# true: coordinates are already in the same projected CRS as the DSM
+takeoff_coords_projected: false
+
+# ==============================================================================
+# AREA OF INTEREST (AOI) SETTINGS
+# ==============================================================================
+# Geographic filtering options (Optional - can only be used when using features_path)
+# NOTE: aoi_index and aoi_qualifier must be used together
+
+# Path to an AOI file to filter features spatially
+aoi_path: null # e.g., 'path/to/aoi.gpkg'
+
+# Index of the specific AOI polygon to use
+# REQUIRED when aoi_qualifier is specified
+aoi_index: null # e.g., 1
+
+# A qualifier string to be added to output filenames when an AOI is used
+# REQUIRED when aoi_index is specified  
+aoi_qualifier: null # e.g., 'north'
+
+# ==============================================================================
+# TOUCH-SKY SETTINGS
+# ==============================================================================
+# Periodic altitude ascent for signal maintenance and RTK corrections
+# Useful for maintaining drone-controller connection in dense forest canopies
+
+# Enable or disable the "touch sky" feature
+touch_sky: false
+
+# Number of waypoints between each "touch sky" action (minimum: 5)
+touch_sky_interval: 10
+
+# Altitude in meters above DSM for the "touch sky" action (maximum: 200)
+touch_sky_altitude: 100
+
+# ==============================================================================
+# SYSTEM SETTINGS
+# ==============================================================================
+# Debug and operational modes
+
+# Run the script in debug mode for more verbose output and detailed logging
+debug_mode: false
+
+# ==============================================================================
+# ADVANCED TEMPLATE SETTINGS (Optional)
+# ==============================================================================
+# KML/WPML model file paths - uncomment and modify if running from different directory
+# or if you want to use custom template files
+
+# Path to the template KML file
 # kml_model_file_path: './scripts/model/onewpt-wpmz/template.kml'
 
-# Relative path for the output KML file within the output KMZ.
+# Relative path for the output KML file within the output KMZ
 # output_kml_file_path: 'wpmz/template.kml'
 
-# Path to the template WPML file.
+# Path to the template WPML file  
 # wpml_model_file_path: './scripts/model/onewpt-wpmz/waylines.wpml'
 
-# Relative path for the output WPML file within the output KMZ.
+# Relative path for the output WPML file within the output KMZ
 # output_wpml_file_path: 'wpmz/waylines.wpml'
-
-# -----------------------------------------------------------------------------
-# Debug Mode
-# -----------------------------------------------------------------------------
-# Run the script in debug mode for more verbose output.
-debug_mode: false
