@@ -218,7 +218,7 @@ class BuildCSV:
             # Compute distances from takeoff site to all waypoints
             takeoff = np.array(takeoff_coords)
             dists = np.linalg.norm(waypoints_coords - takeoff, axis=1)
-            start_index = np.argmin(dists)
+            start_index = int(np.argmin(dists))
         manager = pywrapcp.RoutingIndexManager(len(scaled_matrix), 1, start_index)
         routing = pywrapcp.RoutingModel(manager)
         
