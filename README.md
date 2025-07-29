@@ -189,7 +189,7 @@ The pipeline generates several output files:
 - `{site}_wpt[qualifier][version].gpkg`: Spatial waypoints data to visualize in GIS software
 
 ### CSV Format
-The output CSV contains the following columns:
+The output CSV from features-based waypoint generation contains the following columns:
 - `point_id`: Unique identifier for each point
 - `cluster_id`: Cluster identifier if available (default: 0)
 - `type`: Point type ('wpt' for waypoints, 'cpt' for checkpoints)
@@ -197,6 +197,8 @@ The output CSV contains the following columns:
 - `lat_y`: Latitude in WGS84
 - `elevation_from_dsm`: Ellipsoidal elevation from DSM in meters
 - `order`: Waypoint order for mission planning
+
+CSV as input needs to respect the format above.
 
 ### Mission Files
 - `template.kml`: KML template for DJI mission
