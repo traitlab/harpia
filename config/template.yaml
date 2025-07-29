@@ -104,17 +104,12 @@ debug_mode: false
 # ==============================================================================
 # ADVANCED TEMPLATE SETTINGS (Optional)
 # ==============================================================================
-# KML/WPML model file paths - uncomment and modify if running from different directory
-# or if you want to use custom template files
+# KML/WPML model file paths - uncomment and modify if you want to use custom template files
 
-# Path to the template KML file
-# kml_model_file_path: './templates/onewpt-wpmz/template.kml'
+# Path to the template files
+# kml_model_file_path: '/custom/path/to/template.kml'
+# wpml_model_file_path: '/custom/path/to/waylines.wpml'
 
-# Relative path for the output KML file within the output KMZ
+# Relative path for the output files within the output KMZ
 # output_kml_file_path: 'wpmz/template.kml'
-
-# Path to the template WPML file  
-# wpml_model_file_path: './templates/onewpt-wpmz/waylines.wpml'
-
-# Relative path for the output WPML file within the output KMZ
 # output_wpml_file_path: 'wpmz/waylines.wpml'

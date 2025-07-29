@@ -1,10 +1,10 @@
-import re
 from pathlib import Path
 from typing import Optional, List
 
 from pydantic import BaseModel, Field, FilePath, field_validator
 from typing_extensions import Annotated
 
+PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
 
 class Config(BaseModel):
     csv_path: Optional[FilePath] = None
@@ -33,9 +33,9 @@ class Config(BaseModel):
 
     debug_mode: bool = False
 
-    kml_model_file_path: FilePath = './templates/onewpt-wpmz/template.kml'
+    kml_model_file_path: FilePath = Path(f"{PROJECT_ROOT}/templates/onewpt-wpmz/template.kml")
     output_kml_file_path: Path = 'wpmz/template.kml'
-    wpml_model_file_path: FilePath = './templates/onewpt-wpmz/waylines.wpml'
+    wpml_model_file_path: FilePath = Path(f"{PROJECT_ROOT}/templates/onewpt-wpmz/waylines.wpml")
     output_wpml_file_path: Path = 'wpmz/waylines.wpml'
 
     class Config:
