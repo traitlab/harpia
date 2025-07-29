@@ -48,8 +48,8 @@ approach: 10
 # Buffer around the flight path to find minimal elevation above obstacles for checkpoints
 buffer_path: 10
 
-# Buffer around each tree/feature for calculating its elevation from the DSM
-buffer_tree: 3
+# Buffer around each feature for calculating its elevation from the DSM
+buffer_feature: 3
 
 # Takeoff site coordinates for route optimization
 # Coordinates can be [longitude, latitude] (WGS84) or [x, y] (projected CRS)

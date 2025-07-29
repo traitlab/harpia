@@ -81,7 +81,6 @@ aoi_index: 1 # Optional
 aoi_qualifier: north # Optional
 
 buffer_path: 10 # Optional
-buffer_tree: 3 # Optional
 takeoff_coords: [-73.5558, 45.5572]  # Optional
 takeoff_coords_projected: false  # Optional
 

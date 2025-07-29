@@ -11,14 +11,14 @@ from shapely.geometry import box, LineString, Point
 
 class BuildCSV:
     # -------------------------------------------------------------------------
-    def __init__(self, features_path, dsm_path, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_tree=3, takeoff_coords=None, takeoff_coords_projected=False):
+    def __init__(self, features_path, dsm_path, aoi_path=None, aoi_index=1, aoi_qualifier="", buffer_path=10, buffer_feature=3, takeoff_coords=None, takeoff_coords_projected=False):
         self.features_path = features_path
         self.dsm_path = dsm_path
         self.aoi_path = aoi_path
         self.aoi_index = aoi_index
         self.aoi_qualifier = aoi_qualifier
         self.buffer_path = buffer_path
-        self.buffer_tree = buffer_tree
+        self.buffer_feature = buffer_feature
         self.takeoff_coords = takeoff_coords
         self.takeoff_coords_projected = takeoff_coords_projected
     
@@ -35,7 +35,7 @@ class BuildCSV:
         features = self.align_features_to_dsm(features, dsm)
         # 4. Check for overlap
         self.check_features_overlap_dsm(features, dsm)
-        # 5. Extract tree elevations
+        # 5. Extract feature elevations
         features = self.extract_features_elevations(features)
         # 6. Build distance matrix and get coordinates
         coords = np.array([[geom.x, geom.y] for geom in features.geometry])
@@ -157,7 +157,7 @@ class BuildCSV:
         For each feature, create a buffer and extract the DSM elevation value. Returns a GeoDataFrame with an 'elev' column.
         """
         # Create buffer around centroids
-        buffers = features.buffer(self.buffer_tree)
+        buffers = features.buffer(self.buffer_feature)
         gdf_buffers = gpd.GeoDataFrame(geometry=buffers, crs=features.crs)
 
         stats = zonal_stats(gdf_buffers, self.dsm_path, stats=["max"])

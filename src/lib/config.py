@@ -111,7 +111,7 @@ try:
             aoi_index=args.aoi_index,
             aoi_qualifier=args.aoi_qualifier,
             buffer_path=10,  # Default value
-            buffer_tree=3,   # Default value
+            buffer_feature=3,   # Default value
             takeoff_coords=args.takeoff_coords,
             takeoff_coords_projected=args.takeoff_coords_projected,
             output_folder=args.output_path,

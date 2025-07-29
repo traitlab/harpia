@@ -21,7 +21,7 @@ def main():
                 aoi_index=config.aoi_index,
                 aoi_qualifier=config.aoi_qualifier,
                 buffer_path=config.buffer_path,
-                buffer_tree=config.buffer_tree,
+                buffer_feature=config.buffer_feature,
                 takeoff_coords=config.takeoff_coords,
                 takeoff_coords_projected=config.takeoff_coords_projected
             )

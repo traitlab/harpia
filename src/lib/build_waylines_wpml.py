@@ -138,7 +138,7 @@ class BuildWaylinesWPML:
     # -------------------------------------------------------------------------
     def generate(self):
         # Find the first checkpoint's elevation_from_dsm
-        # The first check point is either at the same height than the frist tree or higher. So it's ok to use it as the first point altitude to reach. 
+        # The first check point is either at the same height than the frist feature or higher. So it's ok to use it as the first point altitude to reach. 
         # Safe takeoff altitude is set by the pilote (takeOffSecurityHeight is set to 100 in our templat_ye)  
         # Return to home altitude is also set on the drone remote by the pilote for the last point
 
