@@ -124,12 +124,12 @@ debug_mode: false
 
 ## 🚀 Usage Examples
 
-### Run with configuration file:
+### Run with Configuration File
 
 ```bash
 python main.py --config config.yaml
 ```
-### Using Command Line Arguments 
+### Run with Command Line Arguments
 (replace '\\' with '^' for Windows Command Prompt)
 
 #### Option 1: Use existing CSV file (legacy workflow)
@@ -157,7 +157,7 @@ python main.py \
   --dsm data/dsm.tif \
   --aoi data/aoi.gpkg \
   --aoi-index 2 \
-  --aoi-qualifier "north" \
+  --aoi-qualifier north
 ```
 
 ## 📋 Input Data Requirements
