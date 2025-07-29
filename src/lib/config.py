@@ -25,22 +25,22 @@ def load_config(config_path: str) -> Config:
 # Parse command line arguments
 parser = argparse.ArgumentParser(
     description='Generate drone mission files (KMZ) from features layer or existing waypoint coordinates. Supports automatic waypoint mission generation from GeoPackage/Shapefile + DSM, or direct processing of CSV waypoints.')
+# Input/Output Settings
 parser.add_argument('--config', '-c', type=str, required=False,
                     help='Path to the configuration file. Other choice is to provide the --csv or --features arguments.')
 parser.add_argument('--csv', '-csv', type=str, required=False,
                     help='Path to the input CSV file in the right format containing waypoints. If not provided, it will be generated from features.')
-parser.add_argument('--touch-sky', '-ts', action='store_true', default=False,
-                    help='Enable touch-sky feature where drone flies up periodically (default: False)')
-parser.add_argument('--touch-sky-interval', '-n', type=int, default=10,
-                    help='Number of placemarks between each touch-sky action (default: 10, min: 5)')
-parser.add_argument('--touch-sky-altitude', '-alt', type=int, default=100,
-                    help='Altitude in meters above DSM for touch-sky action (default: 100, max: 200)')
-
-# Arguments for BuildCSV
 parser.add_argument('--features', '-f', type=str, required=False,
                     help='Path to the input features file (e.g., GeoPackage, Shapefile).')
 parser.add_argument('--dsm', '-dsm', type=str, required=False,
                     help='Path to the DSM raster file.')
+
+parser.add_argument('--output-path', '-op', type=str, required=False,
+                    help='Custom output directory path (default: same directory as input file)')
+parser.add_argument('--output-filename', '-of', type=str, required=False,
+                    help='Custom output filename without extension (default: same as input file). ')
+
+# Waypoint Generation Settings
 parser.add_argument('--aoi', '-aoi', type=str, required=False,
                     help='Path to the AOI file to filter features.')
 parser.add_argument('--aoi-index', '-i', type=int,
@@ -51,11 +51,15 @@ parser.add_argument('--takeoff-coords', '-to', type=float, nargs=2,
                     metavar=('X', 'Y'), required=False,
                     help='Coordinates (x, y) of the takeoff site.')
 parser.add_argument('--takeoff-coords-projected', '-proj', action='store_true', default=False,
-                    help='Flag to indicate takeoff coordinates are in projected CRS (same as DSM). Default: False (WGS84)')
-parser.add_argument('--output-path', '-op', type=str, required=False,
-                    help='Custom output directory path (default: same directory as input file)')
-parser.add_argument('--output-filename', '-of', type=str, required=False,
-                    help='Custom output filename without extension (default: same as input file). ')
+                    help='Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84))')
+
+# Touch-sky Settings
+parser.add_argument('--touch-sky', '-ts', action='store_true', default=False,
+                    help='Enable touch-sky feature where drone flies up periodically (default: False)')
+parser.add_argument('--touch-sky-interval', '-n', type=int, default=10,
+                    help='Number of placemarks between each touch-sky action (default: 10, min: 5)')
+parser.add_argument('--touch-sky-altitude', '-alt', type=int, default=100,
+                    help='Altitude in meters above DSM for touch-sky action (default: 100, max: 200)')
 
 parser.add_argument('--debug', '-d', action='store_true',
                     help='Run in debug mode (default: False)')
