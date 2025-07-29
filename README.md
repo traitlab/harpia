@@ -34,9 +34,9 @@ Periodically ascends to a higher altitude to re-establish signal and transmit up
 - **Configurable**: Set interval (every N waypoints) and altitude (up to 200m above DSM)
 
 ### 🚁 Takeoff Site Coordinates
-Optionally specify takeoff site coordinates (`--takeoff-site-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
+Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
 - **Purpose**: Start the mission from a defined first waypoint for improved route planning
-- **Configurable**: Provide coordinates as `[x, y]` (projected CRS) or `lon lat` (WGS84)
+- **Configurable**: Provide coordinates as `x y` (projected CRS) or `lon lat` (WGS84)
 
 ## 🔧 Setup
 
@@ -64,128 +64,100 @@ It is possible to pass a YAML configuration file or to use command-line argument
 Create a configuration file (e.g., `config.yaml`) with your settings. A detailed configuration template, including explicit descriptions for each argument, is available in the `config` folder.
 
 ```yaml
-# General settings
-approach: 10
-buffer: 6
-
-# Either `csv_path` or `features_path` must be provided.
-# Input waypoints
+# Input/Output settings
 csv_path: /path/to/waypoints.csv # Optional
-
-# Feature-based waypoint generation settings
 features_path: /path/to/features.gpkg # Optional
 dsm_path: /path/to/dsm.tif # Optional
+output_folder: /path/to/output  # Optional
+output_filename: my_mission  # Optional
 
+# Flight settings
+buffer: 6
+approach: 10
+
+# Waypoint generation settings
+buffer_path: 10 # Optional
+buffer_feature: 3 # Optional
+takeoff_coords: [-73.5558, 45.5572]  # Optional
+takeoff_coords_projected: false  # Optional
+
+# Area of Interest (AOI) settings
 aoi_path: /path/to/aoi.gpkg # Optional
 aoi_index: 1 # Optional
 aoi_qualifier: north # Optional
-
-buffer_path: 10 # Optional
-takeoff_coords: [-73.5558, 45.5572]  # Optional
-takeoff_coords_projected: false  # Optional
 
 # Touch-sky settings
 touch_sky: false
 touch_sky_interval: 10
 touch_sky_altitude: 100
 
-# Output settings
-output_folder: /path/to/output  # Optional
-output_filename: custom_mission  # Optional
-
-# Debug mode
+# System settings
 debug_mode: false
 ```
 
 ### Available Command Line Arguments
 
-#### Core Arguments
+#### 📁 Input/Output Settings
 - `--config, -c`: Path to YAML configuration file
 - `--csv, -csv`: Path to existing waypoints CSV file
-- `--output-path, -op`: Output directory path
-- `--output-filename, -of`: Custom output filename without extension
-
-#### Flight Parameters
-- `--approach, -a`: Approach height above tree crown in meters (default: 10)
-- `--buffer, -b`: Buffer height above tree crown in meters (default: 6)
-
-#### BuildCSV Parameters (for generating waypoints from features)
 - `--features, -f`: Path to input features file (GeoPackage, Shapefile)
 - `--dsm, -dsm`: Path to DSM raster file
-- `--aoi, -aoi`: Path to AOI file for filtering features (optional)
-- `--aoi-index, -i`: Index of AOI polygon to use, 1-based (default: 1)
-- `--aoi-qualifier, -q`: Qualifier for AOI in output filenames (optional)
-- `--buffer-path`: Buffer for path checkpoints in meters (default: 10)
-- `--buffer-tree`: Buffer for tree features in meters (default: 3)
-- `--takeoff-site-coords, -to`: Takeoff site coordinates as two floats: x y
-- `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (same as DSM). Default: False (WGS84)
+- `--output-path, -op`: Output directory path (optional)
+- `--output-filename, -of`: Custom output filename without extension (optional)
 
-#### Touch-Sky Parameters
-- `--touch-sky, -ts`: Enable touch-sky feature (default: false)
+#### 🗺️ Area of Interest (AOI) Settings
+- `--aoi, -aoi`: Path to AOI file for filtering features (optional)
+- `--aoi-index, -i`: Index of AOI polygon to use (optional)
+- `--aoi-qualifier, -q`: Qualifier for AOI in output filename (optional)
+
+#### 🎯 Waypoint Generation Settings
+- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lon lat (optional)
+- `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
+
+#### 🌤️ Touch-Sky Settings
+- `--touch-sky, -ts`: Enable touch-sky feature (default: False)
 - `--touch-sky-interval, -n`: Number of waypoints between touch-sky actions (default: 10, min: 5)
 - `--touch-sky-altitude, -alt`: Touch-sky altitude in meters above DSM (default: 100, max: 200)
 
-#### Other Options
+#### 🔧 System Settings
 - `--debug, -d`: Run in debug mode
 
 ## 🚀 Usage Examples
 
-Run with configuration file:
+### Run with configuration file:
+
 ```bash
 python main.py --config config.yaml
 ```
+### Using Command Line Arguments 
+(replace '\\' with '^' for Windows Command Prompt)
 
-### Using Command Line Arguments
+#### Option 1: Use existing CSV file (legacy workflow)
+with custom output settings and `--touch-sky` option to enable periodic ascents
 
-#### Option 1: Generate waypoints from features
-```bash
-python main.py \
-  --features data/trees.gpkg \
-  --dsm data/dsm.tif \
-  --aoi data/aoi.gpkg \
-  --aoi-index 1 \
-  --aoi-qualifier north \
-```
-
-#### Option 2: Use existing CSV file (legacy workflow)
 ```bash
 python main.py \
   --csv waypoints.csv \
-  --output-folder /path/to/output \
+  --output-path /path/to/output \
   --output-filename my_mission \
-  --touch-sky \
+  --touch-sky
 ```
 
-### Example 1: Complete workflow from features
+#### Option 2: Generate waypoints from features
 ```bash
 python main.py \
-  --features-path data/trees_centroids.gpkg \
-  --dsm-path data/site_dsm.tif \
-  --output results/ \
-  --approach 12 \
-  --buffer 8 \
-  --touch-sky \
-  --touch-sky-interval 15
+  --features data/site_centroids.gpkg \
+  --dsm data/dsm.tif
 ```
 
-### Example 2: Using existing waypoints
+### Option 3: Complete workflow from features with AOI filtering
 ```bash
 python main.py \
-  --csv data/waypoints.csv \
-  --output results/ \
-  --approach 10 \
-  --buffer 6
-```
-
-### Example 3: With AOI filtering
-```bash
-python main.py \
-  --features-path data/all_trees.gpkg \
-  --dsm-path data/dsm.tif \
-  --aoi-path data/study_area.gpkg \
+  --features data/site_polygons1.gpkg \
+  --dsm data/dsm.tif \
+  --aoi data/aoi.gpkg \
   --aoi-index 2 \
-  --aoi-qualifier "_area2" \
-  --output results/
+  --aoi-qualifier "north" \
 ```
 
 ## 📋 Input Data Requirements
@@ -194,31 +166,27 @@ python main.py \
 - **Format**: GeoPackage (.gpkg) or Shapefile (.shp)
 - **Geometry**: Point, Polygon, or MultiPolygon
 - **Naming convention**: `{site}_{centroids|polygons}[version].{ext}`
-  - Examples: `site1_centroids.gpkg`, `area2_polygons3.shp`
-- **CRS**: Any projected coordinate system
+  - Examples: `site_centroids.gpkg`, `area_polygons3.shp`
+- **CRS**: Any projected coordinate system that matches the DSM and AOI
 
 ### DSM (Digital Surface Model)
 - **Format**: GeoTIFF (.tif, .tiff)
-- **Content**: Elevation values in meters
-- **CRS**: Should match or be compatible with features
+- **Content**: Ellipsoidal elevation values in meters
+- **CRS**: Any projected coordinate system that matches the features and AOI
 
 ### AOI (Area of Interest) - Optional
 - **Format**: GeoPackage (.gpkg) or Shapefile (.shp)  
 - **Geometry**: Polygon or MultiPolygon
 - **Purpose**: Filter features to specific areas
+- **CRS**: Any projected coordinate system that matches the features and DSM
 
 ## 📊 Output Files
 
 The pipeline generates several output files:
 
 ### Waypoints Files
-- `{site}_wpt[qualifier][version].csv`: Waypoints for mission planning
-- `{site}_wpt[qualifier][version].gpkg`: Spatial waypoints data
-
-### Mission Files
-- `template.kml`: KML template for DJI mission
-- `waylines.wpml`: WPML waylines for DJI drone
-- `mission.kmz`: Complete mission package
+- `{site}_wpt[qualifier][version].csv`: Waypoints for mission generation
+- `{site}_wpt[qualifier][version].gpkg`: Spatial waypoints data to visualize in GIS software
 
 ### CSV Format
 The output CSV contains the following columns:
@@ -227,5 +195,10 @@ The output CSV contains the following columns:
 - `type`: Point type ('wpt' for waypoints, 'cpt' for checkpoints)
 - `lon_x`: Longitude in WGS84
 - `lat_y`: Latitude in WGS84
-- `elevation_from_dsm`: Elevation from DSM in meters
+- `elevation_from_dsm`: Ellipsoidal elevation from DSM in meters
 - `order`: Waypoint order for mission planning
+
+### Mission Files
+- `template.kml`: KML template for DJI mission
+- `waylines.wpml`: WPML waylines for DJI drone
+- `mission.kmz`: Complete mission package to upload to DJI Pilot 2 app
