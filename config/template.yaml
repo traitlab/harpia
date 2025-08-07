@@ -90,7 +90,7 @@ touch_sky: false
 # Number of waypoints between each "touch sky" action (minimum: 5)
 touch_sky_interval: 10
 
-# Altitude in meters above DSM for the "touch sky" action (maximum: 200)
+# Altitude in meters above DSM for the "touch sky" action (minimum: 16, maximum: 200)
 touch_sky_altitude: 100
 
 # ==============================================================================

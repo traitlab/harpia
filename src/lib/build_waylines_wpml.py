@@ -172,7 +172,7 @@ class BuildWaylinesWPML:
 
             # Add touch-sky action if enabled and interval is reached
             if config.touch_sky and touch_sky_count >= config.touch_sky_interval:
-                height = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach) + float(config.touch_sky_altitude))
+                height = str(float(cpt_elevation_from_dsm) + float(config.touch_sky_altitude))
                 self.addTouchSkyPlacemark(
                     base_index + 4, lat_y, lon_x, height, point_id, '-90', action_group_id + 3, base_index + 4)
                 

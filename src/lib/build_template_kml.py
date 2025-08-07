@@ -184,8 +184,8 @@ class BuildTemplateKML:
             
             # Add touch-sky action if enabled and interval is reached
             if config.touch_sky and touch_sky_count >= config.touch_sky_interval:
-                height_ellips = str(float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach) + float(config.touch_sky_altitude))
-                height_egm96 = str(float(cpt_ellips_height_egm96) + float(config.buffer) + float(config.approach) + float(config.touch_sky_altitude))
+                height_ellips = str(float(cpt_elevation_from_dsm) + float(config.touch_sky_altitude))
+                height_egm96 = str(float(cpt_ellips_height_egm96) + float(config.touch_sky_altitude))
                 self.addTouchSkyPlacemark(
                     base_index + 4, lat_y, lon_x, height_ellips, height_egm96, '-90', action_group_id + 3, base_index + 4)
                 
