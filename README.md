@@ -116,7 +116,7 @@ debug_mode: false
 
 #### 🌤️ Touch-Sky Settings
 - `--touch-sky, -ts`: Enable touch-sky feature (default: False)
-- `--touch-sky-interval, -n`: Number of waypoints between touch-sky actions (default: 10, min: 5)
+- `--touch-sky-interval, -n`: Number of features between touch-sky actions (default: 10, min: 5)
 - `--touch-sky-altitude, -alt`: Touch-sky altitude in meters above DSM (default: 100, min: 16, max: 200)
 
 #### 🔧 System Settings

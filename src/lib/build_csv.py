@@ -43,7 +43,7 @@ class BuildCSV:
         # 7. Transform takeoff coordinates to DSM CRS if needed
         takeoff_coords_dsm = None
         if self.takeoff_coords is not None:
-            takeoff_coords_dsm = self._transform_takeoff_coords_to_dsm_crs(self.takeoff_coords, dsm.crs)
+            takeoff_coords_dsm = self.transform_takeoff_coords_to_dsm_crs(self.takeoff_coords, dsm.crs)
         # 8. Solve TSP (optionally with takeoff site)
         tsp_route = self.solve_tsp_ortools(distance_matrix, takeoff_coords=takeoff_coords_dsm, waypoints_coords=coords)
         # 9. Reorder features according to TSP
@@ -52,6 +52,7 @@ class BuildCSV:
         checkpoints = self.extract_path_checkpoints(waypoints)
         # 11. Interleave waypoints and checkpoints
         merged = self.merge_waypoints_and_checkpoints(waypoints, checkpoints)
+        merged = self.fix_cpt_wpt_elevation_duplicates(merged)
         # 12. Transform to WGS84 for export
         merged_gdf = gpd.GeoDataFrame(merged, geometry='geometry', crs=features.crs)
         merged_gdf = self.to_wgs84(merged_gdf)
@@ -182,7 +183,7 @@ class BuildCSV:
         return distance_matrix
     
     # -------------------------------------------------------------------------
-    def _transform_takeoff_coords_to_dsm_crs(self, takeoff_coords, dsm_crs):
+    def transform_takeoff_coords_to_dsm_crs(self, takeoff_coords, dsm_crs):
         """
         Transform takeoff coordinates to DSM CRS if needed.
         If takeoff_coords_projected=False (default), assumes WGS84 and transforms to DSM CRS.
@@ -313,6 +314,26 @@ class BuildCSV:
         
         merged.append(waypoints.iloc[-1])
         merged_df = pd.DataFrame(merged)
+        
+        return merged_df
+    
+    # -------------------------------------------------------------------------
+    def fix_cpt_wpt_elevation_duplicates(self, merged_df):
+        """
+        Fix pause mission error when a checkpoint is immediately followed by a waypoint with the same elevation.
+        Adds +1 to the checkpoint elevation to avoid the conflict.
+        """
+        merged_df = merged_df.reset_index(drop=True)
+
+        for i in range(len(merged_df) - 1):
+            curr = merged_df.iloc[i]
+            next_ = merged_df.iloc[i + 1]
+            if (
+                curr['type'] == 'cpt' and
+                next_['type'] == 'wpt' and
+                abs(curr['elev'] - next_['elev']) < 1e-3
+            ):
+                merged_df.iloc[i, merged_df.columns.get_loc('elev')] = curr['elev'] + 1
         
         return merged_df
     

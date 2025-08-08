@@ -57,7 +57,7 @@ parser.add_argument('--takeoff-coords-projected', '-proj', action='store_true', 
 parser.add_argument('--touch-sky', '-ts', action='store_true', default=False,
                     help='Enable touch-sky feature where drone flies up periodically (default: False)')
 parser.add_argument('--touch-sky-interval', '-n', type=int, default=10,
-                    help='Number of placemarks between each touch-sky action (default: 10, min: 5)')
+                    help='Number of features between each touch-sky action (default: 10, min: 5)')
 parser.add_argument('--touch-sky-altitude', '-alt', type=int, default=100,
                     help='Altitude in meters above DSM for touch-sky action (default: 100, min: 16, max: 200)')
 
