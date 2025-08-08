@@ -130,7 +130,7 @@ debug_mode: false
 python main.py --config config.yaml
 ```
 ### Run with Command Line Arguments
-(replace '\\' with '^' for Windows Command Prompt)
+(replace `\` with `^` for Windows Command Prompt)
 
 #### Option 1: Use existing CSV file (legacy workflow)
 with custom output settings and `--touch-sky` option to enable periodic ascents
@@ -150,7 +150,7 @@ python main.py \
   --dsm data/dsm.tif
 ```
 
-### Option 3: Complete workflow from features with AOI filtering
+#### Option 3: Generate waypoints from features with AOI filtering
 ```bash
 python main.py \
   --features data/site_polygons1.gpkg \
@@ -168,6 +168,7 @@ python main.py \
 - **Naming convention**: `{site}_{centroids|polygons}[version].{ext}`
   - Examples: `site_centroids.gpkg`, `area_polygons3.shp`
 - **CRS**: Any projected coordinate system that matches the DSM and AOI
+- **Unique Identifier**: Each feature should have a unique `point_id` or `FID` that will be used for naming output pictures
 
 ### DSM (Digital Surface Model)
 - **Format**: GeoTIFF (.tif, .tiff)
