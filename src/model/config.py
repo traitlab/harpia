@@ -10,7 +10,7 @@ class Config(BaseModel):
     csv_path: Optional[FilePath] = None
 
     features_path: Optional[FilePath] = None
-    dsm_path: Optional[FilePath] = None
+    dsm_path: Optional[str] = None
 
     output_folder: Optional[Path] = None
     output_filename: Optional[str] = None
