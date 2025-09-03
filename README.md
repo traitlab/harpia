@@ -165,7 +165,7 @@ python main.py \
 ### Features File
 - **Format**: GeoPackage (.gpkg) or Shapefile (.shp)
 - **Geometry**: Point, Polygon, or MultiPolygon
-- **Naming convention**: `{site}_{centroids|polygons}[version].{ext}`
+- **Naming convention**: `{site}_{centroids|points|polygons}[version].{ext}`
   - Examples: `site_centroids.gpkg`, `area_polygons3.shp`
 - **CRS**: Any projected coordinate system that matches the DSM and AOI
 - **Unique Identifier**: Each feature should have a unique `point_id` or `FID` that will be used for naming output pictures
