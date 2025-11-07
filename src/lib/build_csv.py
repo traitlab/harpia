@@ -110,6 +110,20 @@ class BuildCSV:
             mask = features.geometry.intersects(aoi.unary_union)
             features = features[mask]
         
+        # Validate feature count: at least 2 features needed for route planning
+        num_features = len(features)
+        if num_features == 0:
+            raise ValueError(f"No features found in '{self.features_path}'. Ensure the input features file contains at least 2 features.")
+        if num_features == 1:
+            # include point_id if present
+            single_id = None
+            try:
+                single_id = features.iloc[0].get('point_id', None)
+            except Exception:
+                single_id = None
+            id_msg = f" (point_id={single_id})" if single_id is not None else ""
+            raise ValueError(f"Features file must contain at least 2 features for route planning. Found only 1 feature{id_msg}.")
+
         return features
     
     # -------------------------------------------------------------------------
