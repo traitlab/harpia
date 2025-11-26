@@ -39,7 +39,7 @@ Periodically ascends to a higher altitude to re-establish signal and transmit up
 ### 🚁 Takeoff Site Coordinates
 Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
 - **Purpose**: Start the mission from a defined first waypoint for improved route planning
-- **Configurable**: Provide coordinates as `y x` (projected CRS) or `lat lon` (WGS84)
+- **Configurable**: Provide coordinates as `x y` (projected CRS) or `lat lon` (WGS84)
 
 ## 🔧 Setup
 
@@ -81,7 +81,7 @@ approach: 10
 # Waypoint generation settings
 buffer_path: 10 # Optional
 buffer_feature: 3 # Optional
-takeoff_coords: [45.5572, -73.5558]  # Optional
+takeoff_coords: [45.5572, -73.5558]  # Optional (lat lon for WGS84, or x y if projected)
 takeoff_coords_projected: false  # Optional
 
 # Area of Interest (AOI) settings
@@ -114,7 +114,7 @@ debug_mode: false
 - `--aoi-qualifier, -q`: Qualifier for AOI in output filename (optional)
 
 #### 🎯 Waypoint Generation Settings
-- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: y x OR lat lon (optional)
+- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
 - `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
 
 #### 🌤️ Touch-Sky Settings
