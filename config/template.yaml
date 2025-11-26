@@ -52,9 +52,9 @@ buffer_path: 10
 buffer_feature: 3
 
 # Takeoff site coordinates for route optimization
-# Coordinates can be [longitude, latitude] (WGS84) or [x, y] (projected CRS)
+# Coordinates can be [latitude, longitude] (WGS84) or [y, x] (projected CRS)
 # The starting point of the TSP route will be the nearest feature to these coordinates
-takeoff_coords: null # e.g., [-73.55588, 45.55729] or [612709, 5045875]
+takeoff_coords: null # e.g., [45.55729, -73.55588] or [5045875, 612709]
 
 # Coordinate system flag for takeoff coordinates
 # false (default): coordinates are in WGS84 and will be transformed to DSM CRS
