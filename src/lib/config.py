@@ -48,8 +48,8 @@ parser.add_argument('--aoi-index', '-i', type=int,
 parser.add_argument('--aoi-qualifier', '-q', type=str,
                     help='Qualifier for the AOI to be used in output filenames.')
 parser.add_argument('--takeoff-coords', '-to', type=float, nargs=2,
-                    metavar=('X', 'Y'), required=False,
-                    help='Coordinates (x, y) of the takeoff site.')
+                    metavar=('Y', 'X'), required=False,
+                    help='Coordinates (y, x) of the takeoff site.')
 parser.add_argument('--takeoff-coords-projected', '-proj', action='store_true', default=False,
                     help='Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84))')
 

@@ -39,7 +39,7 @@ Periodically ascends to a higher altitude to re-establish signal and transmit up
 ### 🚁 Takeoff Site Coordinates
 Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
 - **Purpose**: Start the mission from a defined first waypoint for improved route planning
-- **Configurable**: Provide coordinates as `x y` (projected CRS) or `lon lat` (WGS84)
+- **Configurable**: Provide coordinates as `y x` (projected CRS) or `lat lon` (WGS84)
 
 ## 🔧 Setup
 
@@ -81,7 +81,7 @@ approach: 10
 # Waypoint generation settings
 buffer_path: 10 # Optional
 buffer_feature: 3 # Optional
-takeoff_coords: [-73.5558, 45.5572]  # Optional
+takeoff_coords: [45.5572, -73.5558]  # Optional
 takeoff_coords_projected: false  # Optional
 
 # Area of Interest (AOI) settings
@@ -114,7 +114,7 @@ debug_mode: false
 - `--aoi-qualifier, -q`: Qualifier for AOI in output filename (optional)
 
 #### 🎯 Waypoint Generation Settings
-- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lon lat (optional)
+- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: y x OR lat lon (optional)
 - `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
 
 #### 🌤️ Touch-Sky Settings
@@ -208,3 +208,17 @@ CSV as input needs to respect the format above.
 - `template.kml`: KML template for DJI mission
 - `waylines.wpml`: WPML waylines for DJI drone
 - `mission.kmz`: Complete mission package to upload to DJI Pilot 2 app
+
+## 📚 Citation
+If you use harpia in your research, please cite our paper (bioRxiv preprint):
+
+```bibtex
+@misc{Lalibert2025harpia,
+    title={Seeing the forest and the trees: a workflow for automatic acquisition of ultra-high resolution drone photos of tropical forest canopies to support botanical and ecological studies},
+    author={Laliberté, Etienne and Caron-Guay, Antoine and Le Falher, Vincent and Tougas, Guillaume and Muller-Landau, Helene C. and Rivas-Torres, Gonzalo and Walla, Thomas R. and Baudchon, Hugo and Hernandez, Mélvin and Buenaño, Adrian and Weber, Anna and Chambers, Jeffrey and Inuma, Jomber and Araúz, Fernando and Valdes, Jorge and Hernández, Andrés and Brassfield, David and Sérgio, Paulo and Vasquez, Vicente and Simonetti, Adriana and Marra, Daniel M. and Vasconcelos, Caroline and Vaca, Jarol F. and Rivadeneyra, Geovanny and Illanes, José and Salagaje-Muela, Luis A. and Gualinga, Jefferson},
+    year={2025},
+    url={https://www.biorxiv.org/content/10.1101/2025.09.02.673753v1},
+    doi={10.1101/2025.09.02.673753},
+    keywords={Unoccupied aerial vehicle (UAV),biodiversity,monitoring,RGB imagery,canopy,remote tree-survey,Panama,Ecuador,Brazil,tropical tree diversity}
+}
+```

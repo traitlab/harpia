@@ -186,23 +186,25 @@ class BuildCSV:
     def transform_takeoff_coords_to_dsm_crs(self, takeoff_coords, dsm_crs):
         """
         Transform takeoff coordinates to DSM CRS if needed.
-        If takeoff_coords_projected=False (default), assumes WGS84 and transforms to DSM CRS.
-        If takeoff_coords_projected=True, assumes coordinates are already in DSM CRS.
+        If takeoff_coords_projected=False (default), assumes WGS84 (lat, lon) and transforms to DSM CRS.
+        If takeoff_coords_projected=True, assumes coordinates (y, x) are already in DSM CRS.
         """
         if not self.takeoff_coords_projected:
-            # Coordinates are in WGS84, transform to DSM CRS
+            # Coordinates are in WGS84 (lat, lon), transform to DSM CRS
+            lat, lon = takeoff_coords[0], takeoff_coords[1]
             point_wgs84 = gpd.GeoDataFrame(
-                geometry=[Point(takeoff_coords[0], takeoff_coords[1])], 
+                geometry=[Point(lon, lat)],  # Point expects (x, y) which is (lon, lat)
                 crs="EPSG:4326"
             )
             point_dsm_crs = point_wgs84.to_crs(dsm_crs)
             transformed_coords = [point_dsm_crs.geometry.iloc[0].x, point_dsm_crs.geometry.iloc[0].y]
-            print(f"Transformed takeoff coordinates from WGS84 {takeoff_coords} to {dsm_crs} {transformed_coords}")
+            print(f"Transformed takeoff coordinates from WGS84 [lat, lon] {takeoff_coords} to {dsm_crs} [x, y] {transformed_coords}")
             return transformed_coords
         else:
             # Coordinates are already in DSM CRS (projected)
+            y, x = takeoff_coords[0], takeoff_coords[1]
             print(f"Using takeoff coordinates as-is (assumed to be in DSM CRS): {takeoff_coords}")
-            return takeoff_coords
+            return [x, y]
     
     # -------------------------------------------------------------------------
     @staticmethod
