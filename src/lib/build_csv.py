@@ -215,10 +215,9 @@ class BuildCSV:
             print(f"Transformed takeoff coordinates from WGS84 [lat, lon] {takeoff_coords} to {dsm_crs} [x, y] {transformed_coords}")
             return transformed_coords
         else:
-            # Coordinates are already in DSM CRS (projected)
-            y, x = takeoff_coords[0], takeoff_coords[1]
-            print(f"Using takeoff coordinates as-is (assumed to be in DSM CRS): {takeoff_coords}")
-            return [x, y]
+            # Coordinates are already in DSM CRS (projected) as [x, y]
+            print(f"Using takeoff coordinates [x, y] {takeoff_coords} (assumed to be in DSM CRS)")
+            return takeoff_coords
     
     # -------------------------------------------------------------------------
     @staticmethod
