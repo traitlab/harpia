@@ -178,7 +178,7 @@ try:
         else:
             raise ValueError("Either 'csv_path' or 'features_path' must be provided")
 
-        pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d?$'
+        pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d{0,2}$'
         if not re.match(pattern, input_filename):
             raise ValueError(
                 f"""Input filename '{input_filename}' does not match the required pattern.
@@ -190,8 +190,8 @@ try:
         config.output_filename = f"{drone_site}_wpt"
         if config.aoi_qualifier and config.aoi_path is not None:
             config.output_filename += f"{config.aoi_qualifier}"
-        # Extract version from filename if present (digit at the end)
-        version_match = re.search(r'\d$', input_filename)
+        # Extract version from filename if present (1 or 2 digits at the end)
+        version_match = re.search(r'\d{1,2}$', input_filename)
         if version_match:
             config.output_filename += f"{version_match.group()}"
 
