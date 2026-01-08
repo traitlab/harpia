@@ -490,11 +490,11 @@ class BuildWaylinesWPML:
         placemark.append(wpml_actionGroup)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('0', '168', str(
-            point_id) + "zoom", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
+            point_id) + "_168mm", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
         wpml_actionGroup.append(wpml_action)
 
         wpml_action = self.addPlacemarkActionOrientedShoot('1', '24', str(
-            point_id), '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
+            point_id) + "_24mm", '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
         wpml_actionGroup.append(wpml_action)
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
