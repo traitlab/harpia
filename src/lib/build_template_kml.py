@@ -7,6 +7,7 @@ from pathlib import Path
 from xml.dom.minidom import parseString
 
 from src.lib.config import config
+from src.model.config import DRONE_MODEL_CONFIG
 
 from src.lib.WGS84toEGM96 import download_egm96, transform_to_egm96
 
@@ -58,7 +59,7 @@ class BuildTemplateKML:
         self.image_height = '0'
         self.af_pos = '0'
         self.gimbal_port = '0'
-        self.oriented_camera_type = '67'
+        self.oriented_camera_type = DRONE_MODEL_CONFIG[config.drone_model]['oriented_camera_type']
         self.oriented_file_size = '0'
         self.orientedCameraShutterTime = '0.00625'
 
@@ -108,7 +109,7 @@ class BuildTemplateKML:
             # sys.exit("Not enought wpt. Minimum of two wpt is supported. One wpt can be created directly using the drone remote.")
         elif len(self.wpt_csv_properties) != len(self.cpt_csv_properties) + 1:
             if len(self.wpt_csv_properties) > len(self.cpt_csv_properties) + 1:
-              sys.exit("Two many wpt or not enought cpt. Number of wpt must be one more than the number of cpt points.")
+              sys.exit("Too many wpt or not enought cpt. Number of wpt must be one more than the number of cpt points.")
             if len(self.wpt_csv_properties) < len(self.cpt_csv_properties) + 1:
               sys.exit("Too many cpt or not enought wpt. Number of wpt must be one more than the number of cpt points.")
         # Duplicate the first and last checkpoint property to make thing easier to handle the first and last waypoint 
@@ -451,13 +452,17 @@ class BuildTemplateKML:
         wpml_actionGroup = self.addPlacemarkActionGroup(actionGroupId, actionGroupIndex)
         placemark.append(wpml_actionGroup)
 
-        wpml_action = self.addPlacemarkActionOrientedShoot('0', '168', str(
-            point_id) + "_168mm", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
-        wpml_actionGroup.append(wpml_action)
-
-        wpml_action = self.addPlacemarkActionOrientedShoot('1', '24', str(
-            point_id) + "_24mm", '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
-        wpml_actionGroup.append(wpml_action)
+        # Add photo actions based on drone model configuration
+        photo_actions = DRONE_MODEL_CONFIG[config.drone_model]['photo_actions']
+        for idx, action_config in enumerate(photo_actions):
+            wpml_action = self.addPlacemarkActionOrientedShoot(
+                str(idx),
+                action_config['focal_length'],
+                str(point_id) + "_" + action_config['suffix'],
+                action_config['uuid'],
+                action_config['uuid']
+            )
+            wpml_actionGroup.append(wpml_action)
 
         wpml_isRisky = ET.SubElement(
             placemark, f'{{{self.namespaces["wpml"]}}}isRisky')

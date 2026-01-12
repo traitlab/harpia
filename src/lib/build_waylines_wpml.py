@@ -6,6 +6,7 @@ from pathlib import Path
 from xml.dom.minidom import parseString
 
 from src.lib.config import config
+from src.model.config import DRONE_MODEL_CONFIG
 
 class BuildWaylinesWPML:
 
@@ -68,7 +69,7 @@ class BuildWaylinesWPML:
         self.image_height = '0'
         self.af_pos = '0'
         self.gimbal_port = '0'
-        self.oriented_camera_type = '67'
+        self.oriented_camera_type = DRONE_MODEL_CONFIG[config.drone_model]['oriented_camera_type']
         self.oriented_file_size = '0'
         self.orientedCameraShutterTime = '0.00625'
 
@@ -489,13 +490,17 @@ class BuildWaylinesWPML:
         wpml_actionGroup = self.addPlacemarkActionGroup(actionGroupId, actionGroupIndex)
         placemark.append(wpml_actionGroup)
 
-        wpml_action = self.addPlacemarkActionOrientedShoot('0', '168', str(
-            point_id) + "_168mm", '703556e4-81fb-4294-b607-05d5f748377f', '703556e4-81fb-4294-b607-05d5f748377f')
-        wpml_actionGroup.append(wpml_action)
-
-        wpml_action = self.addPlacemarkActionOrientedShoot('1', '24', str(
-            point_id) + "_24mm", '51ae7825-56de-41d3-90bb-3c9ed6de7960', '393e34ba-016e-4fd3-98bf-3f9fe0c517df')
-        wpml_actionGroup.append(wpml_action)
+        # Add photo actions based on drone model configuration
+        photo_actions = DRONE_MODEL_CONFIG[config.drone_model]['photo_actions']
+        for idx, action_config in enumerate(photo_actions):
+            wpml_action = self.addPlacemarkActionOrientedShoot(
+                str(idx),
+                action_config['focal_length'],
+                str(point_id) + "_" + action_config['suffix'],
+                action_config['uuid'],
+                action_config['uuid']
+            )
+            wpml_actionGroup.append(wpml_action)
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)

@@ -34,6 +34,8 @@ parser.add_argument('--features', '-f', type=str, required=False,
                     help='Path to the input features file (e.g., GeoPackage, Shapefile).')
 parser.add_argument('--dsm', '-dsm', type=str, required=False,
                     help='Path to the DSM raster file.')
+parser.add_argument('--drone-model', '-m', type=str, required=False, choices=['m3e', 'M3E', 'm4e', 'M4E'],
+                    help='Model of drone used. M3E and M4E are currently supported.')
 
 parser.add_argument('--output-path', '-op', type=str, required=False,
                     help='Custom output directory path (default: same directory as input file)')
@@ -127,6 +129,7 @@ try:
             approach=10,  # Default value
             buffer=6,     # Default value
             csv_path=args.csv,
+            drone_model=args.drone_model if args.drone_model else 'm3e',
             touch_sky=args.touch_sky,
             touch_sky_interval=args.touch_sky_interval,
             touch_sky_altitude=args.touch_sky_altitude,

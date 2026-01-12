@@ -10,13 +10,14 @@
       <wpml:executeRCLostAction>goBack</wpml:executeRCLostAction>
       <wpml:takeOffSecurityHeight>100</wpml:takeOffSecurityHeight>
       <wpml:takeOffRefPoint>0.000000,0.000000,0.000000</wpml:takeOffRefPoint>
-      <wpml:globalTransitionalSpeed>15</wpml:globalTransitionalSpeed>
+      <wpml:globalTransitionalSpeed>21</wpml:globalTransitionalSpeed>
       <wpml:droneInfo>
-        <wpml:droneEnumValue>77</wpml:droneEnumValue>
+        <wpml:droneEnumValue>99</wpml:droneEnumValue>
         <wpml:droneSubEnumValue>0</wpml:droneSubEnumValue>
       </wpml:droneInfo>
+      <wpml:waylineAvoidLimitAreaMode>0</wpml:waylineAvoidLimitAreaMode>
       <wpml:payloadInfo>
-        <wpml:payloadEnumValue>66</wpml:payloadEnumValue>
+        <wpml:payloadEnumValue>88</wpml:payloadEnumValue>
         <wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue>
         <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
       </wpml:payloadInfo>
@@ -29,7 +30,7 @@
         <wpml:heightMode>EGM96</wpml:heightMode>
         <wpml:positioningType>RTKBaseStation</wpml:positioningType>
       </wpml:waylineCoordinateSysParam>
-      <wpml:autoFlightSpeed>15</wpml:autoFlightSpeed>
+      <wpml:autoFlightSpeed>21</wpml:autoFlightSpeed>
       <wpml:globalHeight>0</wpml:globalHeight>
       <wpml:caliFlightEnable>0</wpml:caliFlightEnable>
       <wpml:gimbalPitchMode>manual</wpml:gimbalPitchMode>
@@ -129,13 +130,13 @@
             <wpml:actionActuatorFuncParam>
               <wpml:gimbalPitchRotateAngle>-90</wpml:gimbalPitchRotateAngle>
               <wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle>
-              <wpml:gimbalYawRotateAngle>-52.6846771240234</wpml:gimbalYawRotateAngle>
+              <wpml:gimbalYawRotateAngle>0</wpml:gimbalYawRotateAngle>
               <wpml:focusX>0</wpml:focusX>
               <wpml:focusY>0</wpml:focusY>
               <wpml:focusRegionWidth>0</wpml:focusRegionWidth>
               <wpml:focusRegionHeight>0</wpml:focusRegionHeight>
               <wpml:focalLength>168</wpml:focalLength>
-              <wpml:aircraftHeading>-52</wpml:aircraftHeading>
+              <wpml:aircraftHeading>0</wpml:aircraftHeading>
               <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
@@ -145,7 +146,7 @@
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>67</wpml:orientedCameraType>
+              <wpml:orientedCameraType>88</wpml:orientedCameraType>
               <wpml:orientedFilePath>703556e4-81fb-4294-b607-05d5f748377f</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
@@ -160,13 +161,44 @@
             <wpml:actionActuatorFuncParam>
               <wpml:gimbalPitchRotateAngle>-90</wpml:gimbalPitchRotateAngle>
               <wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle>
-              <wpml:gimbalYawRotateAngle>-52.6846771240234</wpml:gimbalYawRotateAngle>
+              <wpml:gimbalYawRotateAngle>0</wpml:gimbalYawRotateAngle>
+              <wpml:focusX>0</wpml:focusX>
+              <wpml:focusY>0</wpml:focusY>
+              <wpml:focusRegionWidth>0</wpml:focusRegionWidth>
+              <wpml:focusRegionHeight>0</wpml:focusRegionHeight>
+              <wpml:focalLength>72</wpml:focalLength>
+              <wpml:aircraftHeading>0</wpml:aircraftHeading>
+              <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
+              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+              <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
+              <wpml:targetAngle>0</wpml:targetAngle>
+              <wpml:actionUUID>4972910c-8c61-4576-90f7-a9e07d560854</wpml:actionUUID>
+              <wpml:imageWidth>0</wpml:imageWidth>
+              <wpml:imageHeight>0</wpml:imageHeight>
+              <wpml:AFPos>0</wpml:AFPos>
+              <wpml:gimbalPort>0</wpml:gimbalPort>
+              <wpml:orientedCameraType>88</wpml:orientedCameraType>
+              <wpml:orientedFilePath>4972910c-8c61-4576-90f7-a9e07d560854</wpml:orientedFilePath>
+              <wpml:orientedFileMD5/>
+              <wpml:orientedFileSize>0</wpml:orientedFileSize>
+              <wpml:orientedFileSuffix>3_72mm</wpml:orientedFileSuffix>
+              <wpml:orientedCameraShutterTime>0.00625</wpml:orientedCameraShutterTime>
+              <wpml:orientedPhotoMode>normalPhoto</wpml:orientedPhotoMode>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>
+          <wpml:action>
+            <wpml:actionId>0</wpml:actionId>
+            <wpml:actionActuatorFunc>orientedShoot</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:gimbalPitchRotateAngle>-90</wpml:gimbalPitchRotateAngle>
+              <wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle>
+              <wpml:gimbalYawRotateAngle>0</wpml:gimbalYawRotateAngle>
               <wpml:focusX>0</wpml:focusX>
               <wpml:focusY>0</wpml:focusY>
               <wpml:focusRegionWidth>0</wpml:focusRegionWidth>
               <wpml:focusRegionHeight>0</wpml:focusRegionHeight>
               <wpml:focalLength>24</wpml:focalLength>
-              <wpml:aircraftHeading>-52</wpml:aircraftHeading>
+              <wpml:aircraftHeading>0</wpml:aircraftHeading>
               <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
@@ -176,8 +208,8 @@
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>67</wpml:orientedCameraType>
-              <wpml:orientedFilePath>393e34ba-016e-4fd3-98bf-3f9fe0c517df</wpml:orientedFilePath>
+              <wpml:orientedCameraType>88</wpml:orientedCameraType>
+              <wpml:orientedFilePath>51ae7825-56de-41d3-90bb-3c9ed6de7960</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
               <wpml:orientedFileSuffix>3_24mm</wpml:orientedFileSuffix>
@@ -215,7 +247,7 @@
             <wpml:actionActuatorFuncParam>
               <wpml:gimbalRotateMode>absoluteAngle</wpml:gimbalRotateMode>
               <wpml:gimbalPitchRotateEnable>1</wpml:gimbalPitchRotateEnable>
-              <wpml:gimbalPitchRotateAngle>-10</wpml:gimbalPitchRotateAngle>
+              <wpml:gimbalPitchRotateAngle>-15</wpml:gimbalPitchRotateAngle>
               <wpml:gimbalRollRotateEnable>0</wpml:gimbalRollRotateEnable>
               <wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle>
               <wpml:gimbalYawRotateEnable>0</wpml:gimbalYawRotateEnable>
@@ -230,12 +262,7 @@
       </Placemark>
       <wpml:payloadParam>
         <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-        <wpml:meteringMode>average</wpml:meteringMode>
-        <wpml:dewarpingEnable>0</wpml:dewarpingEnable>
-        <wpml:returnMode>singleReturnStrongest</wpml:returnMode>
-        <wpml:samplingRate>240000</wpml:samplingRate>
-        <wpml:scanningMode>nonRepetitive</wpml:scanningMode>
-        <wpml:modelColoringEnable>0</wpml:modelColoringEnable>
+        <wpml:imageFormat>visable</wpml:imageFormat>
       </wpml:payloadParam>
     </Folder>
   </Document>

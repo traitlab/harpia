@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:wpml="http://www.dji.com/wpmz/1.0.6">
   <Document>
+    <wpml:createTime>1746106606744</wpml:createTime>
+    <wpml:updateTime>1746107830523</wpml:updateTime>
     <wpml:missionConfig>
       <wpml:flyToWaylineMode>safely</wpml:flyToWaylineMode>
       <wpml:finishAction>goHome</wpml:finishAction>
       <wpml:exitOnRCLost>executeLostAction</wpml:exitOnRCLost>
       <wpml:executeRCLostAction>goBack</wpml:executeRCLostAction>
       <wpml:takeOffSecurityHeight>100</wpml:takeOffSecurityHeight>
+      <wpml:takeOffRefPoint>0.000000,0.000000,0.000000</wpml:takeOffRefPoint>
       <wpml:globalTransitionalSpeed>15</wpml:globalTransitionalSpeed>
       <wpml:droneInfo>
         <wpml:droneEnumValue>77</wpml:droneEnumValue>
@@ -19,12 +22,25 @@
       </wpml:payloadInfo>
     </wpml:missionConfig>
     <Folder>
+      <wpml:templateType>waypoint</wpml:templateType>
       <wpml:templateId>0</wpml:templateId>
-      <wpml:executeHeightMode>WGS84</wpml:executeHeightMode>
-      <wpml:waylineId>0</wpml:waylineId>
-      <wpml:distance>0.0000</wpml:distance>
-      <wpml:duration>0.0000</wpml:duration>
+      <wpml:waylineCoordinateSysParam>
+        <wpml:coordinateMode>WGS84</wpml:coordinateMode>
+        <wpml:heightMode>EGM96</wpml:heightMode>
+        <wpml:positioningType>RTKBaseStation</wpml:positioningType>
+      </wpml:waylineCoordinateSysParam>
       <wpml:autoFlightSpeed>15</wpml:autoFlightSpeed>
+      <wpml:globalHeight>0</wpml:globalHeight>
+      <wpml:caliFlightEnable>0</wpml:caliFlightEnable>
+      <wpml:gimbalPitchMode>manual</wpml:gimbalPitchMode>
+      <wpml:globalWaypointHeadingParam>
+        <wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode>
+        <wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle>
+        <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
+        <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
+      </wpml:globalWaypointHeadingParam>
+      <wpml:globalWaypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:globalWaypointTurnMode>
+      <wpml:globalUseStraightLine>1</wpml:globalUseStraightLine>
       <Placemark>
         <Point>
           <coordinates>
@@ -32,20 +48,12 @@
           </coordinates>
         </Point>
         <wpml:index>0</wpml:index>
-        <wpml:executeHeight>407.113555908203</wpml:executeHeight>
-        <wpml:waypointSpeed>15</wpml:waypointSpeed>
-        <wpml:waypointHeadingParam>
-          <wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode>
-          <wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle>
-          <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
-          <wpml:waypointHeadingAngleEnable>0</wpml:waypointHeadingAngleEnable>
-          <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
-        </wpml:waypointHeadingParam>
-        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
-        </wpml:waypointTurnParam>
-        <wpml:useStraightLine>1</wpml:useStraightLine>
+        <wpml:ellipsoidHeight>407.113555908203</wpml:ellipsoidHeight>
+        <wpml:height>439.879486083984</wpml:height>
+        <wpml:useGlobalSpeed>1</wpml:useGlobalSpeed>
+        <wpml:useGlobalHeadingParam>1</wpml:useGlobalHeadingParam>
+        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
+        <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:actionGroup>
           <wpml:actionGroupId>0</wpml:actionGroupId>
           <wpml:actionGroupStartIndex>0</wpml:actionGroupStartIndex>
@@ -71,12 +79,7 @@
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>
-        <wpml:waypointGimbalHeadingParam>
-          <wpml:waypointGimbalPitchAngle>0</wpml:waypointGimbalPitchAngle>
-          <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
-        </wpml:waypointGimbalHeadingParam>
         <wpml:isRisky>0</wpml:isRisky>
-        <wpml:waypointWorkType>0</wpml:waypointWorkType>
       </Placemark>
       <Placemark>
         <Point>
@@ -85,27 +88,19 @@
           </coordinates>
         </Point>
         <wpml:index>1</wpml:index>
-        <wpml:executeHeight>407.113555908203</wpml:executeHeight>
-        <wpml:waypointSpeed>1</wpml:waypointSpeed>
+        <wpml:ellipsoidHeight>407.113555908203</wpml:ellipsoidHeight>
+        <wpml:height>439.879486083984</wpml:height>
+        <wpml:waypointSpeed>3</wpml:waypointSpeed>
         <wpml:waypointHeadingParam>
           <wpml:waypointHeadingMode>smoothTransition</wpml:waypointHeadingMode>
           <wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle>
           <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
-          <wpml:waypointHeadingAngleEnable>1</wpml:waypointHeadingAngleEnable>
           <wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode>
           <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
         </wpml:waypointHeadingParam>
-        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
-        </wpml:waypointTurnParam>
-        <wpml:useStraightLine>1</wpml:useStraightLine>
-        <wpml:waypointGimbalHeadingParam>
-          <wpml:waypointGimbalPitchAngle>0</wpml:waypointGimbalPitchAngle>
-          <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
-        </wpml:waypointGimbalHeadingParam>
+        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
+        <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:isRisky>0</wpml:isRisky>
-        <wpml:waypointWorkType>0</wpml:waypointWorkType>
       </Placemark>
       <Placemark>
         <Point>
@@ -114,20 +109,12 @@
           </coordinates>
         </Point>
         <wpml:index>2</wpml:index>
-        <wpml:executeHeight>402.113555908203</wpml:executeHeight>
-        <wpml:waypointSpeed>15</wpml:waypointSpeed>
-        <wpml:waypointHeadingParam>
-          <wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode>
-          <wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle>
-          <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
-          <wpml:waypointHeadingAngleEnable>0</wpml:waypointHeadingAngleEnable>
-          <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
-        </wpml:waypointHeadingParam>
-        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
-        </wpml:waypointTurnParam>
-        <wpml:useStraightLine>1</wpml:useStraightLine>
+        <wpml:ellipsoidHeight>402.113555908203</wpml:ellipsoidHeight>
+        <wpml:height>434.879486083984</wpml:height>
+        <wpml:useGlobalSpeed>1</wpml:useGlobalSpeed>
+        <wpml:useGlobalHeadingParam>1</wpml:useGlobalHeadingParam>
+        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
+        <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:actionGroup>
           <wpml:actionGroupId>1</wpml:actionGroupId>
           <wpml:actionGroupStartIndex>2</wpml:actionGroupStartIndex>
@@ -158,7 +145,7 @@
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>67</wpml:orientedCameraType>
+              <wpml:orientedCameraType>66</wpml:orientedCameraType>
               <wpml:orientedFilePath>703556e4-81fb-4294-b607-05d5f748377f</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
@@ -168,7 +155,7 @@
             </wpml:actionActuatorFuncParam>
           </wpml:action>
           <wpml:action>
-            <wpml:actionId>1</wpml:actionId>
+            <wpml:actionId>0</wpml:actionId>
             <wpml:actionActuatorFunc>orientedShoot</wpml:actionActuatorFunc>
             <wpml:actionActuatorFuncParam>
               <wpml:gimbalPitchRotateAngle>-90</wpml:gimbalPitchRotateAngle>
@@ -189,8 +176,8 @@
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>67</wpml:orientedCameraType>
-              <wpml:orientedFilePath>393e34ba-016e-4fd3-98bf-3f9fe0c517df</wpml:orientedFilePath>
+              <wpml:orientedCameraType>66</wpml:orientedCameraType>
+              <wpml:orientedFilePath>51ae7825-56de-41d3-90bb-3c9ed6de7960</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
               <wpml:orientedFileSuffix>3_24mm</wpml:orientedFileSuffix>
@@ -199,12 +186,7 @@
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>
-        <wpml:waypointGimbalHeadingParam>
-          <wpml:waypointGimbalPitchAngle>0</wpml:waypointGimbalPitchAngle>
-          <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
-        </wpml:waypointGimbalHeadingParam>
         <wpml:isRisky>0</wpml:isRisky>
-        <wpml:waypointWorkType>0</wpml:waypointWorkType>
       </Placemark>
       <Placemark>
         <Point>
@@ -213,20 +195,12 @@
           </coordinates>
         </Point>
         <wpml:index>3</wpml:index>
-        <wpml:executeHeight>407.113555908203</wpml:executeHeight>
-        <wpml:waypointSpeed>15</wpml:waypointSpeed>
-        <wpml:waypointHeadingParam>
-          <wpml:waypointHeadingMode>followWayline</wpml:waypointHeadingMode>
-          <wpml:waypointHeadingAngle>0</wpml:waypointHeadingAngle>
-          <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
-          <wpml:waypointHeadingAngleEnable>0</wpml:waypointHeadingAngleEnable>
-          <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
-        </wpml:waypointHeadingParam>
-        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
-        </wpml:waypointTurnParam>
-        <wpml:useStraightLine>1</wpml:useStraightLine>
+        <wpml:ellipsoidHeight>407.113555908203</wpml:ellipsoidHeight>
+        <wpml:height>439.879486083984</wpml:height>
+        <wpml:useGlobalSpeed>1</wpml:useGlobalSpeed>
+        <wpml:useGlobalHeadingParam>1</wpml:useGlobalHeadingParam>
+        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
+        <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:actionGroup>
           <wpml:actionGroupId>2</wpml:actionGroupId>
           <wpml:actionGroupStartIndex>3</wpml:actionGroupStartIndex>
@@ -252,13 +226,17 @@
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>
-        <wpml:waypointGimbalHeadingParam>
-          <wpml:waypointGimbalPitchAngle>0</wpml:waypointGimbalPitchAngle>
-          <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
-        </wpml:waypointGimbalHeadingParam>
         <wpml:isRisky>0</wpml:isRisky>
-        <wpml:waypointWorkType>0</wpml:waypointWorkType>
       </Placemark>
+      <wpml:payloadParam>
+        <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+        <wpml:meteringMode>average</wpml:meteringMode>
+        <wpml:dewarpingEnable>0</wpml:dewarpingEnable>
+        <wpml:returnMode>singleReturnStrongest</wpml:returnMode>
+        <wpml:samplingRate>240000</wpml:samplingRate>
+        <wpml:scanningMode>nonRepetitive</wpml:scanningMode>
+        <wpml:modelColoringEnable>0</wpml:modelColoringEnable>
+      </wpml:payloadParam>
     </Folder>
   </Document>
 </kml>

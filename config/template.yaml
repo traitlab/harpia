@@ -19,6 +19,9 @@ features_path: null # e.g., 'path/to/features.gpkg'
 # REQUIRED when using features_path for waypoint generation
 dsm_path: null # e.g., 'path/to/dsm.tif'
 
+# Model of the drone to carry out the mission
+drone_model: m3e # 'm3e' and 'm4e' are currently supported
+
 # Output configuration
 # Custom output directory path. If not set, default is input file (either CSV or features) directory.
 output_folder: null # e.g., 'path/to/output'
@@ -100,16 +103,3 @@ touch_sky_altitude: 100
 
 # Run the script in debug mode for more verbose output and detailed logging
 debug_mode: false
-
-# ==============================================================================
-# ADVANCED TEMPLATE SETTINGS (Optional)
-# ==============================================================================
-# KML/WPML model file paths - uncomment and modify if you want to use custom template files
-
-# Path to the template files
-# kml_model_file_path: '/custom/path/to/template.kml'
-# wpml_model_file_path: '/custom/path/to/waylines.wpml'
-
-# Relative path for the output files within the output KMZ
-# output_kml_file_path: 'wpmz/template.kml'
-# output_wpml_file_path: 'wpmz/waylines.wpml'
