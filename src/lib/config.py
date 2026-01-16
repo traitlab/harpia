@@ -200,6 +200,7 @@ try:
                 raise ValueError(
                     f"""version '{version_match.group()}' in input filename cannot exceed 5 digits. \nExpected format: (drone_site)_(centroids|points|polygons)[version]"""
                 )
+        config.output_filename += f"_{config.drone_model}"
 
         pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d{0,5}$'
         if not re.match(pattern, input_filename):
