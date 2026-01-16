@@ -496,7 +496,7 @@ class BuildWaylinesWPML:
             wpml_action = self.addPlacemarkActionOrientedShoot(
                 str(idx),
                 action_config['focal_length'],
-                str(point_id) + "_" + action_config['suffix'],
+                str(point_id) + action_config['suffix'],
                 action_config['uuid'],
                 action_config['uuid']
             )

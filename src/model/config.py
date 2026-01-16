@@ -11,16 +11,16 @@ DRONE_MODEL_CONFIG = {
     'm3e': {
         'oriented_camera_type': '66',
         'photo_actions': [
-            {'focal_length': '168', 'suffix': '168mm', 'uuid': '703556e4-81fb-4294-b607-05d5f748377f'},
-            {'focal_length': '24', 'suffix': '24mm', 'uuid': '51ae7825-56de-41d3-90bb-3c9ed6de7960'},
+            {'focal_length': '168', 'suffix': 'tele', 'uuid': '703556e4-81fb-4294-b607-05d5f748377f'},
+            {'focal_length': '24', 'suffix': 'wide', 'uuid': '51ae7825-56de-41d3-90bb-3c9ed6de7960'},
         ],
     },
     'm4e': {
         'oriented_camera_type': '88',
         'photo_actions': [
-            {'focal_length': '168', 'suffix': '168mm', 'uuid': '703556e4-81fb-4294-b607-05d5f748377f'},
-            {'focal_length': '72', 'suffix': '72mm', 'uuid': '4972910c-8c61-4576-90f7-a9e07d560854'},
-            {'focal_length': '24', 'suffix': '24mm', 'uuid': '51ae7825-56de-41d3-90bb-3c9ed6de7960'},
+            {'focal_length': '168', 'suffix': 'tele', 'uuid': '703556e4-81fb-4294-b607-05d5f748377f'},
+            {'focal_length': '72', 'suffix': 'med', 'uuid': '4972910c-8c61-4576-90f7-a9e07d560854'},
+            {'focal_length': '24', 'suffix': 'wide', 'uuid': '51ae7825-56de-41d3-90bb-3c9ed6de7960'},
         ],
     },
 }
