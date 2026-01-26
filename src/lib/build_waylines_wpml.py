@@ -83,12 +83,12 @@ class BuildWaylinesWPML:
         }
 
     # -------------------------------------------------------------------------
-    def read_points_csv(self, csv_file, type):
+    def read_points_csv(self, csv_file, point_type):
         properties = []
         with open(csv_file, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row['type'] != type :
+                if row['type'] != point_type:
                   continue
                 lon_x = row['lon_x']
                 lat_y = row['lat_y']
