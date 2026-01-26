@@ -83,12 +83,12 @@ class BuildWaylinesWPML:
         }
 
     # -------------------------------------------------------------------------
-    def read_points_csv(self, csv_file, type):
+    def read_points_csv(self, csv_file, point_type):
         properties = []
         with open(csv_file, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                if row['type'] != type :
+                if row['type'] != point_type:
                   continue
                 lon_x = row['lon_x']
                 lat_y = row['lat_y']
@@ -115,7 +115,7 @@ class BuildWaylinesWPML:
             # sys.exit("Not enought wpt. Minimum of two wpt is supported. One wpt can be created directly using the drone remote.")
         elif len(self.wpt_csv_properties) != len(self.cpt_csv_properties) + 1:
             if len(self.wpt_csv_properties) > len(self.cpt_csv_properties) + 1:
-              sys.exit("Two many wpt or not enought cpt. Number of wpt must be one more than the number of cpt points.")
+              sys.exit("Too many wpt or not enough cpt. Number of wpt must be one more than the number of cpt points.")
             if len(self.wpt_csv_properties) < len(self.cpt_csv_properties) + 1:
               sys.exit("Too many cpt or not enought wpt. Number of wpt must be one more than the number of cpt points.")
         # Duplicate the first and last checkpoint property to make thing easier to handle the first and last waypoint 

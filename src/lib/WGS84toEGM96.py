@@ -23,7 +23,7 @@ def download_egm96():
   if not os.path.exists(file_path):
       try:
           # Download the file
-          response = requests.get(url)
+          response = requests.get(url, timeout=(10, 120))
           response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX/5XX
           with open(file_path, 'wb') as file:
               file.write(response.content)
