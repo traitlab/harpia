@@ -26,6 +26,9 @@ DRONE_MODEL_CONFIG = {
 }
 
 class Config(BaseModel):
+    # Mission type
+    mission_type: str = Field(default="normal", description="Type of mission: 'normal' or 'crown_mapping'")
+    
     csv_path: Optional[FilePath] = None
 
     features_path: Optional[FilePath] = None
