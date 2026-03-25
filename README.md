@@ -17,6 +17,13 @@
 harpia is an open-source Python library to program automatic close-up photo missions to carry out with the DJI Mavic 3E or Matrice 4E drones. It generates an optimized flight path from feature locations (selected tree crowns for example) to acquire the close-up photos, supporting tropical botanical and ecological work.
 </p>
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=80goMEifpc4" target="_blank">
+    <img src="https://img.youtube.com/vi/80goMEifpc4/maxresdefault.jpg" alt="harpia demo" width="600"/>
+  </a><br/>
+  <a href="https://www.youtube.com/watch?v=80goMEifpc4" target="_blank"><font size="4"><em>▶️ See it in action</em></font></a>
+</p>
+
 ## ✨ Key Features
 
 ### 🎯 Waypoint Generation
