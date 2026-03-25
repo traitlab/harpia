@@ -98,9 +98,6 @@ if (args.aoi_index or args.aoi_qualifier) and not args.aoi:
 if args.aoi_index and not args.aoi_qualifier:
     parser.error("--aoi-index requires --aoi-qualifier to be specified")
 
-if args.aoi_qualifier and not args.aoi_index:
-    parser.error("--aoi-qualifier requires --aoi-index to be specified")
-
 if args.takeoff_coords_projected and not args.takeoff_coords:
     parser.error("--takeoff-coords must be provided when --takeoff-coords-projected is True")
 
@@ -159,9 +156,6 @@ try:
     if config.aoi_index and not config.aoi_qualifier:
         raise ValueError("aoi_index requires aoi_qualifier to be specified")
 
-    if config.aoi_qualifier and not config.aoi_index:
-        raise ValueError("aoi_qualifier requires aoi_index to be specified")
-    
     if config.takeoff_coords_projected and not config.takeoff_coords:
         raise ValueError("takeoff_coords must be provided when takeoff_coords_projected is True")
     

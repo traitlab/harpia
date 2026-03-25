@@ -68,17 +68,22 @@ takeoff_coords_projected: false
 # AREA OF INTEREST (AOI) SETTINGS
 # ==============================================================================
 # Geographic filtering options (Optional - can only be used when using features_path)
-# NOTE: aoi_index and aoi_qualifier must be used together
+#
+# Two ways to select a specific AOI polygon:
+#   Option 1 (index + qualifier): provide both aoi_index and aoi_qualifier
+#   Option 2 (qualifier from file): provide only aoi_qualifier — the AOI file must
+#             contain a 'qualifier' attribute column, and the matching feature is selected
 
 # Path to an AOI file to filter features spatially
 aoi_path: null # e.g., 'path/to/aoi.gpkg'
 
-# Index of the specific AOI polygon to use
-# REQUIRED when aoi_qualifier is specified
+# Index of the specific AOI polygon to use (1-based). Option 1 only.
+# REQUIRED when aoi_qualifier is specified via Option 1
 aoi_index: null # e.g., 1
 
-# A qualifier string to be added to output filenames when an AOI is used
-# REQUIRED when aoi_index is specified  
+# A qualifier string added to output filenames when an AOI is used.
+# Option 1: used together with aoi_index.
+# Option 2: used alone to select the AOI feature by its 'qualifier' attribute in the file.
 aoi_qualifier: null # e.g., 'north'
 
 # ==============================================================================
