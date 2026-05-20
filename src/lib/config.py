@@ -1,4 +1,5 @@
 import argparse
+import csv
 import os
 import re
 import sys
@@ -7,7 +8,46 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from src.model.config import Config
+from src.model.config import Config, DRONE_MODEL_CONFIG
+
+
+# -----------------------------------------------------------------------------
+def validate_csv_format(csv_path):
+    required_columns = {'point_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm'}
+    numeric_columns = ('lon_x', 'lat_y', 'elevation_from_dsm')
+
+    with open(csv_path, 'r') as f:
+        reader = csv.DictReader(f)
+
+        if not reader.fieldnames:
+            raise ValueError(f"CSV file is empty: {csv_path}")
+
+        missing = required_columns - set(reader.fieldnames)
+        if missing:
+            raise ValueError(f"CSV is missing required columns: {sorted(missing)}")
+
+        has_wpt = False
+        has_cpt = False
+
+        for i, row in enumerate(reader):
+            row_type = row['type']
+            if row_type == 'wpt':
+                has_wpt = True
+            elif row_type == 'cpt':
+                has_cpt = True
+
+            for col in numeric_columns:
+                try:
+                    float(row[col])
+                except (ValueError, TypeError):
+                    raise ValueError(
+                        f"Non-numeric value in column '{col}' at row {i + 2}: {row[col]!r}"
+                    )
+
+    if not has_wpt:
+        raise ValueError("CSV contains no rows with type 'wpt'")
+    if not has_cpt:
+        raise ValueError("CSV contains no rows with type 'cpt'")
 
 
 # -----------------------------------------------------------------------------
@@ -169,28 +209,35 @@ try:
     # Set default output filename if not specified
     if not config.output_filename:
         if config.csv_path:
-            input_filename = Path(config.csv_path).stem
+            # CSV is a previously generated output — strip any known model suffix and apply current model
+            csv_stem = Path(config.csv_path).stem
+            known_models = '|'.join(re.escape(m) for m in DRONE_MODEL_CONFIG.keys())
+            base_name = re.sub(rf'_({known_models})$', '', csv_stem, flags=re.IGNORECASE)
+            config.output_filename = f"{base_name}_{config.drone_model}"
         elif config.features_path:
             input_filename = Path(config.features_path).stem
+
+            pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d{0,2}$'
+            if not re.match(pattern, input_filename):
+                raise ValueError(
+                    f"""Input filename '{input_filename}' does not match the required pattern.
+                    Expected format: (drone_site)_(centroids|points|polygons)[version]
+                    Regex: {pattern}\n
+                    Specify an output filename using the 'output_filename' argument to bypass naming rule."""
+                )
+            drone_site = input_filename.split('_')[0]
+            config.output_filename = f"{drone_site}_wpt"
+            if config.aoi_qualifier and config.aoi_path is not None:
+                config.output_filename += f"{config.aoi_qualifier}"
+            # Extract version from filename if present (1 or 2 digits at the end)
+            version_match = re.search(r'\d{1,2}$', input_filename)
+            if version_match:
+                config.output_filename += f"{version_match.group()}"
         else:
             raise ValueError("Either 'csv_path' or 'features_path' must be provided")
 
-        pattern = r'^[0-9a-z]{2,16}_(centroids|points|polygons)\d{0,2}$'
-        if not re.match(pattern, input_filename):
-            raise ValueError(
-                f"""Input filename '{input_filename}' does not match the required pattern.
-                Expected format: (drone_site)_(centroids|points|polygons)[version]
-                Regex: {pattern}\n
-                Specify an output filename using the 'output_filename' argument to bypass naming rule."""
-            )
-        drone_site = input_filename.split('_')[0]
-        config.output_filename = f"{drone_site}_wpt"
-        if config.aoi_qualifier and config.aoi_path is not None:
-            config.output_filename += f"{config.aoi_qualifier}"
-        # Extract version from filename if present (1 or 2 digits at the end)
-        version_match = re.search(r'\d{1,2}$', input_filename)
-        if version_match:
-            config.output_filename += f"{version_match.group()}"
+    if config.csv_path:
+        validate_csv_format(config.csv_path)
 
 except ValidationError as e:
     print("Error: Invalid configuration")
