@@ -7,6 +7,7 @@
 The full ``BuildCSV.run`` pipeline requires a real DSM raster + features layer
 and is NOT covered here (see module-level note in the suite report).
 """
+
 import numpy as np
 import pytest
 from shapely.geometry import Point

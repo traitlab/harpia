@@ -8,15 +8,14 @@ Both write into ``{output_folder}/{output_filename}/wpmz/``.
 Each waypoint expands to 4 placemarks when touch-sky is off:
 firstLast (approach-from), approach, photos, firstLast (depart-to).
 """
+
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 import pytest
+from conftest import write_waypoint_csv
 
 from src.lib.build_template_kml import BuildTemplateKML
 from src.lib.build_waylines_wpml import BuildWaylinesWPML
-
-from conftest import write_waypoint_csv
 
 NS = {
     "kml": "http://www.opengis.net/kml/2.2",
