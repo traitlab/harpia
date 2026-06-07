@@ -171,6 +171,15 @@ class BuildCSV:
                 f"Warning: Features CRS ({features.crs}) does not match DSM CRS ({dsm_crs}). Reprojecting features to DSM CRS."
             )
             features = features.to_crs(dsm_crs)
+        # Distances and buffers below assume metres. A geographic DSM CRS
+        # (degrees) silently truncates the x1000-scaled distance matrix to zero
+        # integers, yielding an arbitrary TSP route. Fail loud instead.
+        if features.crs is not None and not features.crs.is_projected:
+            raise ValueError(
+                f"DSM CRS ({dsm_crs}) is geographic (degrees). A projected CRS "
+                "(e.g. UTM) is required so distances and buffers are in metres. "
+                "Reproject the DSM to a projected CRS and retry."
+            )
         return features
 
     # -------------------------------------------------------------------------
@@ -209,6 +218,15 @@ class BuildCSV:
 
         stats = zonal_stats(gdf_buffers, self.dsm_path, stats=["max"])
         max_elev = [s["max"] for s in stats]
+        # zonal_stats returns max=None where a buffer falls entirely on DSM
+        # nodata (extent edge / hole). Left unguarded, None flows to the CSV as
+        # "None" and later float("None") crashes mission generation. Fail loud.
+        missing = [features.iloc[i].get("point_id", i) for i, v in enumerate(max_elev) if v is None]
+        if missing:
+            raise ValueError(
+                f"DSM has no data under {len(missing)} feature buffer(s) "
+                f"(point_id {missing[:10]}). Increase DSM coverage or reduce buffer_feature."
+            )
         features = features.copy()
         features["elev"] = max_elev
         return features
@@ -340,6 +358,11 @@ class BuildCSV:
             # Use zonal_stats to get max elevation in buffer
             stats = zonal_stats(buffer_gdf, self.dsm_path, stats=["max"])
             max_elev = stats[0]["max"]
+            if max_elev is None:
+                raise ValueError(
+                    f"DSM has no data under the path buffer between waypoints {i} and "
+                    f"{i + 1}. Increase DSM coverage or reduce buffer_path."
+                )
             # Get centroid of buffer for checkpoint
             centroid = buffer_gdf.centroid.iloc[0]
             checkpoints.append(
