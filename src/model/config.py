@@ -59,6 +59,10 @@ class Config(BaseModel):
     takeoff_coords: list[float] | None = None
     takeoff_coords_projected: bool = False
 
+    # Wall-clock budget for the OR-Tools TSP solver. Larger surveys may need
+    # more than the 30 s default to converge on a good route.
+    tsp_time_limit_seconds: int = 30
+
     aoi_path: FilePath | None = None
     aoi_index: int | None = None
     aoi_qualifier: str | None = None

@@ -6,6 +6,10 @@
 
 The full ``BuildCSV.run`` pipeline requires a real DSM raster + features layer
 and is NOT covered here (see module-level note in the suite report).
+
+These tiny problems solve to optimality in milliseconds, so the tests pass a
+short ``time_limit_seconds`` — the OR-Tools guided-local-search otherwise runs
+the full default budget even after the optimum is found, making the suite slow.
 """
 
 import numpy as np
@@ -42,7 +46,7 @@ def test_build_distance_matrix_symmetric_zero_diagonal():
 
 def test_tsp_visits_every_point_once():
     coords = [(0, 0), (0, 1), (1, 1), (1, 0), (2, 2)]
-    route = BuildCSV.solve_tsp_ortools(_euclidean_matrix(coords))
+    route = BuildCSV.solve_tsp_ortools(_euclidean_matrix(coords), time_limit_seconds=2)
     assert route is not None
     assert sorted(route) == list(range(len(coords)))  # each node exactly once
 
@@ -52,7 +56,7 @@ def test_tsp_square_is_optimal_perimeter():
     # (OR-Tools returns an open route, not a closed tour).
     square = [(0, 0), (0, 1), (1, 1), (1, 0)]
     dm = _euclidean_matrix(square)
-    route = BuildCSV.solve_tsp_ortools(dm)
+    route = BuildCSV.solve_tsp_ortools(dm, time_limit_seconds=2)
     assert route is not None
     assert sorted(route) == [0, 1, 2, 3]
     assert route[0] == 0  # default start_index
@@ -64,8 +68,8 @@ def test_tsp_square_is_optimal_perimeter():
 def test_tsp_deterministic_same_input_same_route():
     coords = [(0, 0), (0, 1), (1, 1), (1, 0), (5, 5), (5, 4)]
     dm = _euclidean_matrix(coords)
-    r1 = BuildCSV.solve_tsp_ortools(dm)
-    r2 = BuildCSV.solve_tsp_ortools(dm)
+    r1 = BuildCSV.solve_tsp_ortools(dm, time_limit_seconds=2)
+    r2 = BuildCSV.solve_tsp_ortools(dm, time_limit_seconds=2)
     assert r1 == r2
 
 
@@ -74,10 +78,21 @@ def test_tsp_start_index_follows_nearest_to_takeoff():
     coords = np.array([(0, 0), (0, 10), (10, 10), (10, 0)], float)
     dm = _euclidean_matrix(coords)
     takeoff = [11.0, 0.0]  # closest to (10, 0) == node 3
-    route = BuildCSV.solve_tsp_ortools(dm, takeoff_coords=takeoff, waypoints_coords=coords)
+    route = BuildCSV.solve_tsp_ortools(
+        dm, takeoff_coords=takeoff, waypoints_coords=coords, time_limit_seconds=2
+    )
     assert route is not None
     assert route[0] == 3
     assert sorted(route) == [0, 1, 2, 3]
+
+
+def test_tsp_time_limit_is_configurable():
+    # A custom time budget is accepted and still returns a valid full route.
+    coords = [(0, 0), (0, 1), (1, 1), (1, 0)]
+    dm = _euclidean_matrix(coords)
+    route = BuildCSV.solve_tsp_ortools(dm, time_limit_seconds=1)
+    assert sorted(route) == [0, 1, 2, 3]
+    assert _route_length(route, dm) == pytest.approx(3.0, abs=1e-6)
 
 
 def test_get_tsp_solution_df_reorders_and_labels():

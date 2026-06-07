@@ -22,6 +22,7 @@ class BuildCSV:
         buffer_feature=3,
         takeoff_coords=None,
         takeoff_coords_projected=False,
+        tsp_time_limit_seconds=30,
     ):
         self.features_path = features_path
         self.dsm_path = dsm_path
@@ -32,6 +33,7 @@ class BuildCSV:
         self.buffer_feature = buffer_feature
         self.takeoff_coords = takeoff_coords
         self.takeoff_coords_projected = takeoff_coords_projected
+        self.tsp_time_limit_seconds = tsp_time_limit_seconds
 
     # -------------------------------------------------------------------------
     def run(self, output_folder, output_filename):
@@ -59,7 +61,10 @@ class BuildCSV:
             )
         # 8. Solve TSP (optionally with takeoff site)
         tsp_route = self.solve_tsp_ortools(
-            distance_matrix, takeoff_coords=takeoff_coords_dsm, waypoints_coords=coords
+            distance_matrix,
+            takeoff_coords=takeoff_coords_dsm,
+            waypoints_coords=coords,
+            time_limit_seconds=self.tsp_time_limit_seconds,
         )
         # 9. Reorder features according to TSP
         waypoints = self.get_tsp_solution_df(features, tsp_route)
@@ -253,7 +258,9 @@ class BuildCSV:
 
     # -------------------------------------------------------------------------
     @staticmethod
-    def solve_tsp_ortools(distance_matrix, takeoff_coords=None, waypoints_coords=None):
+    def solve_tsp_ortools(
+        distance_matrix, takeoff_coords=None, waypoints_coords=None, time_limit_seconds=30
+    ):
         """
         Solve TSP using Google OR-Tools. Scales distances by 1000 to use integers.
         If takeoff_coords and waypoints_coords are provided, use takeoff site as the start and find the nearest waypoint.
@@ -283,7 +290,7 @@ class BuildCSV:
         search_parameters.local_search_metaheuristic = (
             routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
-        search_parameters.time_limit.seconds = 30
+        search_parameters.time_limit.seconds = time_limit_seconds
         # or no wait
         # search_parameters.log_search = True
         # search_parameters.first_solution_strategy = (
