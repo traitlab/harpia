@@ -25,6 +25,7 @@ def main():
                 buffer_feature=config.buffer_feature,
                 takeoff_coords=config.takeoff_coords,
                 takeoff_coords_projected=config.takeoff_coords_projected,
+                tsp_time_limit_seconds=config.tsp_time_limit_seconds,
             )
 
             _, _, generated_csv_path = build_csv.run(
