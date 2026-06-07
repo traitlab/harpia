@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, FilePath, field_validator
+from pydantic import BaseModel, ConfigDict, FilePath, field_validator
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
 
@@ -88,5 +88,4 @@ class Config(BaseModel):
     def wpml_model_file_path(self) -> Path:
         return Path(f"{PROJECT_ROOT}/templates/{self.drone_model}-onewpt-wpmz/waylines.wpml")
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
