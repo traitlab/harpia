@@ -4,6 +4,7 @@
 ``{output_folder}/{output_filename}/wpmz/{template.kml,waylines.wpml}`` into a
 DJI-compatible ``.kmz`` archive with members under the ``wpmz/`` prefix.
 """
+
 import zipfile
 from pathlib import Path
 

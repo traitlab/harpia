@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "PL"]
+ignore = ["PLR0913", "PLR0915", "PLR0912", "PLR2004", "PLR0124", "PLC0415"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["PLR2004", "E741", "PLC0415"]
+# Pre-existing long string/comment lines and loop-var shadowing; left untouched to
+# avoid logic-adjacent edits. Re-enable per file as the source is cleaned up.
+"src/lib/build_csv.py" = ["E501"]
+"src/lib/config.py" = ["E501"]
+"src/lib/WGS84toEGM96.py" = ["E501"]
+"src/lib/build_template_kml.py" = ["E501", "PLR1704"]
+"src/lib/build_waylines_wpml.py" = ["E501", "PLR1704"]
+"src/lib/create_kmz.py" = ["E712"]

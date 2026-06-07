@@ -5,6 +5,7 @@ wpt/cpt rows; ``fix_cpt_wpt_elevation_duplicates`` (src/lib/build_csv.py:336)
 bumps a checkpoint elevation by +1 when it equals the following waypoint's.
 Both are pandas-only and need no raster.
 """
+
 import pandas as pd
 import pytest
 
@@ -30,11 +31,13 @@ def test_merge_interleaves_wpt_cpt_ending_on_wpt():
 
 
 def test_fix_elevation_bumps_equal_cpt_before_wpt():
-    df = pd.DataFrame([
-        _wpt(1, 100.0, 1),
-        _cpt(110.0),          # equal to next wpt -> should become 111.0
-        _wpt(2, 110.0, 2),
-    ])
+    df = pd.DataFrame(
+        [
+            _wpt(1, 100.0, 1),
+            _cpt(110.0),  # equal to next wpt -> should become 111.0
+            _wpt(2, 110.0, 2),
+        ]
+    )
     fixed = BuildCSV("f", "d").fix_cpt_wpt_elevation_duplicates(df)
     assert fixed.iloc[1]["elev"] == pytest.approx(111.0)
     # waypoint elevations untouched
@@ -43,10 +46,12 @@ def test_fix_elevation_bumps_equal_cpt_before_wpt():
 
 
 def test_fix_elevation_leaves_distinct_values_alone():
-    df = pd.DataFrame([
-        _wpt(1, 100.0, 1),
-        _cpt(108.0),
-        _wpt(2, 110.0, 2),
-    ])
+    df = pd.DataFrame(
+        [
+            _wpt(1, 100.0, 1),
+            _cpt(108.0),
+            _wpt(2, 110.0, 2),
+        ]
+    )
     fixed = BuildCSV("f", "d").fix_cpt_wpt_elevation_duplicates(df)
     assert list(fixed["elev"]) == [100.0, 108.0, 110.0]

@@ -1,5 +1,6 @@
-from pydantic import ValidationError
 from pathlib import Path
+
+from pydantic import ValidationError
 
 from src.lib.build_csv import BuildCSV
 from src.lib.build_template_kml import BuildTemplateKML
@@ -23,22 +24,21 @@ def main():
                 buffer_path=config.buffer_path,
                 buffer_feature=config.buffer_feature,
                 takeoff_coords=config.takeoff_coords,
-                takeoff_coords_projected=config.takeoff_coords_projected
+                takeoff_coords_projected=config.takeoff_coords_projected,
             )
-            
+
             _, _, generated_csv_path = build_csv.run(
-                output_folder=config.output_folder,
-                output_filename=config.output_filename
+                output_folder=config.output_folder, output_filename=config.output_filename
             )
-            
+
             # Update config with the path of the generated CSV
             config.csv_path = generated_csv_path
             print(f"Waypoints CSV generated at: {config.csv_path}")
 
         # Ensure we have a CSV file to proceed
         if not config.csv_path or not Path(config.csv_path).exists():
-             print("Error: Waypoints CSV file not found or not generated. Aborting.")
-             return
+            print("Error: Waypoints CSV file not found or not generated. Aborting.")
+            return
 
         # Step 2 & 3: Build KML and WPML from the CSV
         print("Building KML and WPML from waypoints CSV")
