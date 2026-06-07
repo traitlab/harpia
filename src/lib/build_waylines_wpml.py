@@ -107,6 +107,11 @@ class BuildWaylinesWPML:
         # Read the coordinates from the CSV
         self.wpt_csv_properties = self.read_points_csv(config.csv_path, "wpt")
         self.cpt_csv_properties = self.read_points_csv(config.csv_path, "cpt")
+        if len(self.wpt_csv_properties) == 0:
+            raise ValueError(
+                f"No waypoints (type='wpt') found in {config.csv_path}. "
+                "A mission needs at least one waypoint."
+            )
         if len(self.wpt_csv_properties) < 2:
             self.cpt_csv_properties = self.wpt_csv_properties.copy()
             self.cpt_csv_properties.append(list(self.cpt_csv_properties[-1]))

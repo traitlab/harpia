@@ -135,3 +135,13 @@ def test_kml_saved_file_is_wellformed_xml(configured, csv_path, tmp_path):
     assert out.exists() and out.stat().st_size > 0
     tree = ET.parse(out)
     assert tree.getroot().tag.endswith("}kml")
+
+
+def test_wpml_setup_rejects_csv_with_no_waypoints(configured, tmp_path):
+    """A CSV with no wpt rows must raise a clear error instead of crashing on
+    cpt_csv_properties[-1] (IndexError) deep in setup()."""
+    empty_csv = write_waypoint_csv(tmp_path / "empty.csv", [], [])
+    configured.csv_path = empty_csv
+    b = BuildWaylinesWPML()
+    with pytest.raises(ValueError, match="No waypoints"):
+        b.setup()
