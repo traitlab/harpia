@@ -11,6 +11,8 @@
 <a href="https://doi.org/10.1101/2025.09.02.673753">
   <img src="https://img.shields.io/badge/bioRxiv-red.svg" alt="Read the paper">
 </a>
+<a href="https://doi.org/10.5281/zenodo.21982704">
+  <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21982704.svg" alt="DOI">
 </p>
 
 <p align="center">
