@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+title: harpia
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Antoine
+    family-names: Caron-Guay
+    email: antoine.caron-guay@umontreal.ca
+    affiliation: >-
+      Institut de recherche en biologie végétale, Université
+      de Montréal
+    orcid: 'https://orcid.org/0009-0000-6197-8625'
+  - family-names: Le Falher
+    given-names: Vincent
+    affiliation: >-
+      Institut de recherche en biologie végétale, Université
+      de Montréal
+  - given-names: Etienne
+    family-names: Laliberté
+    affiliation: >-
+      Institut de recherche en biologie végétale, Université
+      de Montréal
+    orcid: 'https://orcid.org/0000-0002-3167-2622'
+  - given-names: Guillaume
+    family-names: Tougas
+    affiliation: >-
+      Institut de recherche en biologie végétale, Université
+      de Montréal
+    orcid: 'https://orcid.org/0009-0004-1010-4855'
+repository-code: 'https://github.com/traitlab/harpia'
+license: MIT
+version: 1.1.1
+date-released: '2026-08-17'
