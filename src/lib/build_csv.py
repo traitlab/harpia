@@ -16,8 +16,8 @@ class BuildCSV:
         features_path,
         dsm_path,
         aoi_path=None,
-        aoi_index=1,
-        aoi_qualifier="",
+        aoi_index=None,
+        aoi_qualifier=None,
         buffer_path=10,
         buffer_feature=3,
         takeoff_coords=None,
@@ -123,9 +123,18 @@ class BuildCSV:
         # If AOI is provided, filter features
         if self.aoi_path is not None:
             aoi = gpd.read_file(self.aoi_path)
-            # Optionally select a specific AOI by index
+            # Select AOI by index (1-based) or by qualifier attribute
             if self.aoi_index is not None:
                 aoi = aoi.iloc[[self.aoi_index - 1]]  # 1-based index
+            elif self.aoi_qualifier is not None:
+                if "qualifier" not in aoi.columns:
+                    raise ValueError(
+                        f"AOI file does not contain a 'qualifier' column. "
+                        f"Cannot select AOI by qualifier='{self.aoi_qualifier}'."
+                    )
+                aoi = aoi[aoi["qualifier"] == self.aoi_qualifier]
+                if aoi.empty:
+                    raise ValueError(f"No AOI feature found with qualifier='{self.aoi_qualifier}'.")
             # Ensure CRS matches
             if features.crs != aoi.crs:
                 print(

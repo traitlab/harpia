@@ -25,8 +25,13 @@ _BOOTSTRAP_CSV = REPO_ROOT / "tests" / "_bootstrap.csv"
 
 
 def _ensure_bootstrap_csv() -> None:
-    if not _BOOTSTRAP_CSV.exists():
-        _BOOTSTRAP_CSV.write_text("point_id,cluster_id,type,lon_x,lat_y,elevation_from_dsm,order\n")
+    # ``validate_csv_format`` requires the header plus at least one ``wpt`` and one
+    # ``cpt`` row with numeric coordinates, so the config singleton constructs cleanly.
+    _BOOTSTRAP_CSV.write_text(
+        "point_id,cluster_id,type,lon_x,lat_y,elevation_from_dsm,order\n"
+        "1,1,wpt,-73.5,45.5,100.0,1\n"
+        "2,1,cpt,-73.5,45.5,110.0,2\n"
+    )
 
 
 _ensure_bootstrap_csv()

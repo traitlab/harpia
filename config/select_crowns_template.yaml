@@ -1,0 +1,90 @@
+# Configuration template for scripts/select_crowns.py
+#
+# Every filter is OPTIONAL: leave its input at `null` and the step is skipped.
+# Command-line arguments override the values set here.
+
+# ==============================================================================
+# INPUT/OUTPUT SETTINGS
+# ==============================================================================
+
+# Path to the candidate tree crowns layer (GeoPackage, Shapefile, ...)
+crowns_path: null # e.g., 'path/to/crowns.gpkg'
+
+# Path of the layer to write the selected crowns to
+output_path: null # e.g., 'path/to/selected_crowns.gpkg'
+
+# Replace the output file if it already exists
+overwrite: false
+
+# ==============================================================================
+# FILTER 1 - AREA OF INTEREST (optional)
+# ==============================================================================
+# Keeps only the crowns located inside an AOI polygon.
+# Set aoi_path to enable this filter.
+
+aoi_path: null # e.g., 'path/to/drone_sites.gpkg'
+
+# Attribute of the AOI layer holding the site identifier
+site_field: site_id
+
+# Site value to select. Leave null to use every feature of the AOI layer.
+site_id: null # e.g., 'bcipearson'
+
+# 'within'     : the crown must be entirely inside the AOI
+# 'intersects' : the crown only has to touch the AOI
+aoi_predicate: within
+
+# ==============================================================================
+# FILTER 2 - MINIMUM AREA (optional)
+# ==============================================================================
+# Keeps only the crowns at or above a minimum area.
+# Set min_area to enable this filter.
+
+min_area: null # e.g., 25 (square metres)
+
+# Column holding a pre-computed area. Leave null to compute the area from the
+# geometry (reprojected to a metric CRS when needed).
+area_field: null # e.g., 'area'
+
+# ==============================================================================
+# FILTER 3 - ALREADY VISITED (optional)
+# ==============================================================================
+# Drops the crowns that contain a waypoint from a previous mission.
+# Set waypoints_path to enable this filter.
+
+waypoints_path: null # e.g., 'path/to/2024_bci_wpt.gpkg'
+
+# ==============================================================================
+# FILTER 4 - ALREADY KNOWN CROWNS (optional)
+# ==============================================================================
+# Drops the crowns intersecting a reference layer, typically crowns whose
+# species is already known or predicted with high confidence.
+# Set exclude_path to enable this filter.
+
+exclude_path: null # e.g., 'path/to/predictions_above80.gpkg'
+
+# ==============================================================================
+# FILTER 5 - DSM RELIEF (optional)
+# ==============================================================================
+# Drops the crowns that are overtopped by their surroundings: the maximum DSM
+# elevation in a large buffer around the crown centroid is compared with the
+# maximum in a small buffer, and the crown is dropped when the difference
+# exceeds max_dsm_diff. Set dsm_path to enable this filter.
+
+dsm_path: null # e.g., 'path/to/dsm.tif'
+
+# Outer buffer radius around the centroid (metres)
+buffer_large: 8
+
+# Inner buffer radius around the centroid (metres)
+buffer_small: 1
+
+# Maximum tolerated elevation difference between the two buffers (metres)
+max_dsm_diff: 5
+
+# Override the nodata value declared by the raster
+dsm_nodata: null # e.g., -9999
+
+# Keep the crowns for which no DSM statistic can be computed
+# false (default): such crowns are dropped
+keep_undetermined: false
