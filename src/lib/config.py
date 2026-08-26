@@ -8,15 +8,15 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from src.model.config import Config, DRONE_MODEL_CONFIG
+from src.model.config import DRONE_MODEL_CONFIG, Config
 
 
 # -----------------------------------------------------------------------------
 def validate_csv_format(csv_path):
-    required_columns = {'point_id', 'type', 'lon_x', 'lat_y', 'elevation_from_dsm'}
-    numeric_columns = ('lon_x', 'lat_y', 'elevation_from_dsm')
+    required_columns = {"point_id", "type", "lon_x", "lat_y", "elevation_from_dsm"}
+    numeric_columns = ("lon_x", "lat_y", "elevation_from_dsm")
 
-    with open(csv_path, 'r') as f:
+    with open(csv_path) as f:
         reader = csv.DictReader(f)
 
         if not reader.fieldnames:
@@ -30,19 +30,19 @@ def validate_csv_format(csv_path):
         has_cpt = False
 
         for i, row in enumerate(reader):
-            row_type = row['type']
-            if row_type == 'wpt':
+            row_type = row["type"]
+            if row_type == "wpt":
                 has_wpt = True
-            elif row_type == 'cpt':
+            elif row_type == "cpt":
                 has_cpt = True
 
             for col in numeric_columns:
                 try:
                     float(row[col])
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as err:
                     raise ValueError(
                         f"Non-numeric value in column '{col}' at row {i + 2}: {row[col]!r}"
-                    )
+                    ) from err
 
     if not has_wpt:
         raise ValueError("CSV contains no rows with type 'wpt'")
@@ -273,7 +273,7 @@ try:
         if config.csv_path:
             # CSV is a previously generated output - strip any known model suffix and apply current model
             csv_stem = Path(config.csv_path).stem
-            known_models = "|".join(re.escape(m) for m in DRONE_MODEL_CONFIG.keys())
+            known_models = "|".join(re.escape(m) for m in DRONE_MODEL_CONFIG)
             base_name = re.sub(rf"_({known_models})$", "", csv_stem, flags=re.IGNORECASE)
             config.output_filename = f"{base_name}_{config.drone_model}"
         elif config.features_path:

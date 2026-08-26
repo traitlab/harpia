@@ -127,16 +127,14 @@ class BuildCSV:
             if self.aoi_index is not None:
                 aoi = aoi.iloc[[self.aoi_index - 1]]  # 1-based index
             elif self.aoi_qualifier is not None:
-                if 'qualifier' not in aoi.columns:
+                if "qualifier" not in aoi.columns:
                     raise ValueError(
                         f"AOI file does not contain a 'qualifier' column. "
                         f"Cannot select AOI by qualifier='{self.aoi_qualifier}'."
                     )
-                aoi = aoi[aoi['qualifier'] == self.aoi_qualifier]
+                aoi = aoi[aoi["qualifier"] == self.aoi_qualifier]
                 if aoi.empty:
-                    raise ValueError(
-                        f"No AOI feature found with qualifier='{self.aoi_qualifier}'."
-                    )
+                    raise ValueError(f"No AOI feature found with qualifier='{self.aoi_qualifier}'.")
             # Ensure CRS matches
             if features.crs != aoi.crs:
                 print(
