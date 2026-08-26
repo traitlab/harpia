@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-26
+
+### Added
+
+- `scripts/select_crowns.py`, a standalone pre-processing tool that shortlists
+  candidate tree crowns for close-up missions. Five optional filters (area of
+  interest, minimum area, already-visited waypoints, already-known crowns, and
+  DSM relief) each run only when their input is supplied, and every step
+  reports how many crowns it removed.
+- `config/select_crowns_template.yaml` documenting every crown-selection
+  setting.
+- AOI selection by attribute: `aoi_qualifier` may now be given on its own, in
+  which case the AOI feature whose `qualifier` column matches it is selected.
+  `aoi_index` remains available to select by 1-based position.
+- Format validation for CSV inputs: required columns must be present, the
+  coordinate and elevation columns must be numeric, and the file must contain
+  at least one `wpt` and one `cpt` row.
+- Demo video in the README.
+
+### Changed
+
+- `aoi_qualifier` no longer requires `aoi_index` to be specified.
+- Output filenames derived from a CSV input now strip a trailing known
+  drone-model suffix before appending the current model, so re-running an
+  existing waypoints CSV for another drone no longer stacks suffixes.
+- The input-filename naming convention is now enforced only for features-based
+  runs; a CSV input is treated as previously generated output.
+
+### Fixed
+
+- Corrected the Zenodo DOI in the README badge.
+
+## [1.1.1] - 2026-08-24
+
 ### Added
 
 - First automated test suite covering CSV route planning (TSP), KML/WPML
@@ -17,10 +51,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pre-commit` configuration running ruff and ruff-format.
 - `pyproject.toml` with the ruff lint/format configuration
   (select E/F/I/B/UP/SIM/PL, line length 100).
+- This changelog.
+- `CITATION.cff` and a Zenodo DOI badge in the README.
+- Configurable OR-Tools solver time limit for the TSP
+  (`tsp_time_limit_seconds`).
 
 ### Changed
 
 - Reformatted the codebase with `ruff format` and applied ruff autofixes.
+- Migrated the configuration model to Pydantic v2 `ConfigDict`.
+- Renamed the `type` parameter to `point_type` in the KML and WPML builders.
+
+### Fixed
+
+- Explicit error when the DSM uses a geographic CRS or does not cover the
+  input features.
+- Clear error when the waypoint CSV contains no waypoints.
+- Timeout added to the EGM96 download request, which could otherwise hang
+  indefinitely.
+- Typos in an error message, and broken badge links in the README.
 
 ## [1.1.0] - 2026-01-16
 
@@ -54,7 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mission package (template KML + waylines WPML). Includes the touch-sky
   feature, optional takeoff-site coordinates, and AOI filtering.
 
-[Unreleased]: https://github.com/traitlab/harpia/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/traitlab/harpia/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/traitlab/harpia/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/traitlab/harpia/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/traitlab/harpia/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/traitlab/harpia/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/traitlab/harpia/releases/tag/v1.0.0

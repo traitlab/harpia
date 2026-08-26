@@ -47,6 +47,12 @@ Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). T
 - **Purpose**: Start the mission from a defined first waypoint for improved route planning
 - **Configurable**: Provide coordinates as `x y` (projected CRS) or `lat lon` (WGS84)
 
+### 🌳 Crown Pre-Selection
+Optionally shortlist candidate tree crowns before planning a mission, using `scripts/select_crowns.py`:
+- **Input**: A candidate crowns layer, plus any combination of an AOI, a minimum area, an existing waypoints layer, a reference layer of known crowns, and a DSM
+- **Process**: Applies up to five independent filters in sequence, reporting how many crowns each one removes
+- **Output**: A filtered crowns layer ready to feed back in as the `--features` input
+
 ## 🔧 Setup
 
 Clone the repository to your local machine:
@@ -93,8 +99,8 @@ takeoff_coords_projected: false  # Optional
 
 # Area of Interest (AOI) settings
 aoi_path: /path/to/aoi.gpkg # Optional
-aoi_index: 1 # Optional
-aoi_qualifier: north # Optional
+aoi_index: 1 # Optional - selects the AOI polygon by 1-based position
+aoi_qualifier: north # Optional - suffix for output filenames; used alone, selects the AOI by its 'qualifier' column
 
 # Touch-sky settings
 touch_sky: false
@@ -118,8 +124,12 @@ debug_mode: false
 
 #### 🗺️ Area of Interest (AOI) Settings
 - `--aoi, -aoi`: Path to AOI file for filtering features (optional)
-- `--aoi-index, -i`: Index of AOI polygon to use (optional)
-- `--aoi-qualifier, -q`: Qualifier for AOI in output filename (optional)
+- `--aoi-index, -i`: 1-based index of the AOI polygon to use; requires `--aoi-qualifier` (optional)
+- `--aoi-qualifier, -q`: Qualifier appended to output filenames, up to 8 characters (optional)
+
+There are two ways to select a single polygon from the AOI file:
+- **By position**: pass both `--aoi-index` and `--aoi-qualifier`.
+- **By attribute**: pass `--aoi-qualifier` on its own. The AOI file must then contain a `qualifier` column, and the feature whose value matches is selected.
 
 #### 🎯 Waypoint Generation Settings
 - `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
@@ -162,12 +172,22 @@ python main.py \
 ```
 
 #### Option 3: Generate waypoints from features with AOI filtering
+Select the AOI polygon by position:
 ```bash
 python main.py \
   --features data/site_polygons1.gpkg \
   --dsm data/dsm.tif \
   --aoi data/aoi.gpkg \
   --aoi-index 2 \
+  --aoi-qualifier north
+```
+
+Or select it by its `qualifier` attribute, without knowing its position:
+```bash
+python main.py \
+  --features data/site_polygons1.gpkg \
+  --dsm data/dsm.tif \
+  --aoi data/aoi.gpkg \
   --aoi-qualifier north
 ```
 
@@ -191,14 +211,17 @@ python main.py \
 - **Geometry**: Polygon or MultiPolygon
 - **Purpose**: Filter features to specific areas
 - **CRS**: Any projected coordinate system that matches the features and DSM
+- **Attributes**: A `qualifier` column is required only when selecting the AOI with `--aoi-qualifier` alone
 
 ## 📊 Output Files
 
 The pipeline generates several output files:
 
 ### Waypoints Files
-- `{site}_wpt[qualifier][version].csv`: Waypoints for mission generation
-- `{site}_wpt[qualifier][version].gpkg`: Spatial waypoints data to visualize in GIS software
+- `{site}_wpt[qualifier][version]_{drone_model}.csv`: Waypoints for mission generation
+- `{site}_wpt[qualifier][version]_{drone_model}.gpkg`: Spatial waypoints data to visualize in GIS software
+
+When an existing waypoints CSV is passed with `--csv`, a trailing drone-model suffix is stripped from its name and the current model appended, so the same CSV can be re-run for another drone without stacking suffixes.
 
 ### CSV Format
 The output CSV from features-based waypoint generation contains the following columns:
@@ -210,12 +233,47 @@ The output CSV from features-based waypoint generation contains the following co
 - `elevation_from_dsm`: Ellipsoidal elevation from DSM in meters
 - `order`: Waypoint order for mission planning
 
-CSV as input needs to respect the format above.
+CSV as input needs to respect the format above. It is validated on load: the columns listed above must be present, `lon_x`, `lat_y` and `elevation_from_dsm` must be numeric, and the file must contain at least one `wpt` row and one `cpt` row.
 
 ### Mission Files
 - `template.kml`: KML template for DJI mission
 - `waylines.wpml`: WPML waylines for DJI drone
 - `mission.kmz`: Complete mission package to upload to DJI Pilot 2 app
+
+## 🌳 Crown Pre-Selection (Optional)
+
+`scripts/select_crowns.py` narrows a layer of candidate tree crowns down to a shortlist worth visiting. It applies up to five filters, each of which runs **only when its input is supplied**:
+
+| # | Filter | Enabled by | Keeps |
+|---|--------|------------|-------|
+| 1 | Area of interest | `--aoi` | Crowns inside the AOI polygon |
+| 2 | Minimum area | `--min-area` | Crowns at or above a minimum area in m² |
+| 3 | Already visited | `--waypoints` | Crowns that do not already contain a waypoint |
+| 4 | Already known | `--exclude` | Crowns not overlapping a reference layer |
+| 5 | DSM relief | `--dsm` | Crowns not overtopped by their immediate surroundings |
+
+Filters run in the order above, each operating on the survivors of the previous one, and every step reports how many crowns it removed.
+
+```bash
+python scripts/select_crowns.py \
+  --crowns crowns.gpkg \
+  --output selected_crowns.gpkg \
+  --aoi drone_sites.gpkg --site-id bcipearson \
+  --min-area 25 \
+  --waypoints 2024_bci_wpt.gpkg \
+  --exclude predictions_above80.gpkg \
+  --dsm dsm.tif --buffer-large 8 --buffer-small 1 --max-dsm-diff 5
+```
+
+Every setting can also come from a YAML file, with command-line arguments taking precedence:
+
+```bash
+python scripts/select_crowns.py --config config/select_crowns.yaml
+```
+
+See [`config/select_crowns_template.yaml`](config/select_crowns_template.yaml) for the full list of settings and their defaults.
+
+The resulting layer can be used directly as the `--features` input to `main.py`. Name it to match the features naming convention (for example `bcipearson_polygons.gpkg`), or pass `--output-filename` to `main.py` to bypass that rule.
 
 ## 📚 Citation
 If you use harpia in your research, please cite our paper (bioRxiv preprint):
