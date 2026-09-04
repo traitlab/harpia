@@ -12,12 +12,12 @@
       <wpml:takeOffRefPoint>0.000000,0.000000,0.000000</wpml:takeOffRefPoint>
       <wpml:globalTransitionalSpeed>21</wpml:globalTransitionalSpeed>
       <wpml:droneInfo>
-        <wpml:droneEnumValue>99</wpml:droneEnumValue>
+        <wpml:droneEnumValue>100</wpml:droneEnumValue>
         <wpml:droneSubEnumValue>0</wpml:droneSubEnumValue>
       </wpml:droneInfo>
       <wpml:waylineAvoidLimitAreaMode>0</wpml:waylineAvoidLimitAreaMode>
       <wpml:payloadInfo>
-        <wpml:payloadEnumValue>88</wpml:payloadEnumValue>
+        <wpml:payloadEnumValue>98</wpml:payloadEnumValue>
         <wpml:payloadSubEnumValue>0</wpml:payloadSubEnumValue>
         <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
       </wpml:payloadInfo>
@@ -140,13 +140,14 @@
               <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
+              <wpml:payloadLensIndex>visable</wpml:payloadLensIndex>
               <wpml:targetAngle>0</wpml:targetAngle>
               <wpml:actionUUID>703556e4-81fb-4294-b607-05d5f748377f</wpml:actionUUID>
               <wpml:imageWidth>0</wpml:imageWidth>
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>88</wpml:orientedCameraType>
+              <wpml:orientedCameraType>98</wpml:orientedCameraType>
               <wpml:orientedFilePath>703556e4-81fb-4294-b607-05d5f748377f</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
@@ -171,13 +172,14 @@
               <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
+              <wpml:payloadLensIndex>visable</wpml:payloadLensIndex>
               <wpml:targetAngle>0</wpml:targetAngle>
               <wpml:actionUUID>4972910c-8c61-4576-90f7-a9e07d560854</wpml:actionUUID>
               <wpml:imageWidth>0</wpml:imageWidth>
               <wpml:imageHeight>0</wpml:imageHeight>
               <wpml:AFPos>0</wpml:AFPos>
               <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>88</wpml:orientedCameraType>
+              <wpml:orientedCameraType>98</wpml:orientedCameraType>
               <wpml:orientedFilePath>4972910c-8c61-4576-90f7-a9e07d560854</wpml:orientedFilePath>
               <wpml:orientedFileMD5/>
               <wpml:orientedFileSize>0</wpml:orientedFileSize>
@@ -193,6 +195,7 @@
               <wpml:fileSuffix>3wide</wpml:fileSuffix>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
+              <wpml:payloadLensIndex>visable</wpml:payloadLensIndex>
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>

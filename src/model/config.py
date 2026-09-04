@@ -4,10 +4,38 @@ from pydantic import BaseModel, ConfigDict, FilePath, field_validator
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
 
-# Drone model configurations
+# The M4E and the M4D fly the same three-shot sequence; only their camera and
+# payload enum values differ. The list is read-only, so both models share it.
+M4_PHOTO_ACTIONS = [
+    {
+        "focal_length": "168",
+        "suffix": "tele",
+        "uuid": "703556e4-81fb-4294-b607-05d5f748377f",
+    },
+    {
+        "focal_length": "72",
+        "suffix": "med",
+        "uuid": "4972910c-8c61-4576-90f7-a9e07d560854",
+    },
+    # 1x shot via takePhoto (wide): orientedShoot fires the zoom camera,
+    # which has no DJI Time Sync and so no RTK-accurate position.
+    {
+        "actuator_func": "takePhoto",
+        "suffix": "wide",
+    },
+]
+
+# Drone model configurations.
+#
+# kml_payload_lens_index / wpml_payload_lens_index: the payloadLensIndex the
+# remote controller writes into template.kml and waylines.wpml for that payload,
+# or None when it writes none. "visable" is DJI's own spelling. The M4E omits it
+# from template.kml; the M4D writes it in both files.
 DRONE_MODEL_CONFIG = {
     "m3e": {
         "oriented_camera_type": "66",
+        "kml_payload_lens_index": None,
+        "wpml_payload_lens_index": None,
         "photo_actions": [
             {
                 "focal_length": "168",
@@ -23,19 +51,15 @@ DRONE_MODEL_CONFIG = {
     },
     "m4e": {
         "oriented_camera_type": "88",
-        "photo_actions": [
-            {
-                "focal_length": "168",
-                "suffix": "tele",
-                "uuid": "703556e4-81fb-4294-b607-05d5f748377f",
-            },
-            {"focal_length": "72", "suffix": "med", "uuid": "4972910c-8c61-4576-90f7-a9e07d560854"},
-            {
-                "focal_length": "24",
-                "suffix": "wide",
-                "uuid": "51ae7825-56de-41d3-90bb-3c9ed6de7960",
-            },
-        ],
+        "kml_payload_lens_index": None,
+        "wpml_payload_lens_index": "visable",
+        "photo_actions": M4_PHOTO_ACTIONS,
+    },
+    "m4d": {
+        "oriented_camera_type": "98",
+        "kml_payload_lens_index": "visable",
+        "wpml_payload_lens_index": "visable",
+        "photo_actions": M4_PHOTO_ACTIONS,
     },
 }
 

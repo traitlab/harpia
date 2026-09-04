@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-09-04
+
+### Added
+
+- Support for the Matrice 4D (`drone_model: m4d`), with its own mission
+  template under `templates/m4d-onewpt-wpmz/`. It flies the same three-shot
+  sequence as the M4E and differs only in its drone (`100`), payload (`98`)
+  and oriented-camera (`98`) enum values, plus a `payloadLensIndex` that its
+  remote controller writes into `template.kml` as well as `waylines.wpml`.
+
+### Fixed
+
+- M4E: the 1x photo of each waypoint is now taken with a `takePhoto` action in
+  wide mode instead of `orientedShoot`, which always fires the zoom camera.
+  Zoom photos get no DJI Time Sync, so their RTK position was wrong. The tele
+  and med shots still use `orientedShoot`; the M3E is unchanged.
+- M4E: the `takePhoto` action now matches the remote controller's own export
+  byte for byte -- `fileSuffix` first, `payloadLensIndex` (`visable`) last and
+  only in `waylines.wpml`, and a centred `focus` action emitted just before it.
+- M4E: `orientedShoot` actions in `waylines.wpml` now carry the
+  `payloadLensIndex` (`visable`) the remote controller writes; it was missing.
+
 ## [1.2.0] - 2026-08-26
 
 ### Added
@@ -103,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mission package (template KML + waylines WPML). Includes the touch-sky
   feature, optional takeoff-site coordinates, and AOI filtering.
 
-[Unreleased]: https://github.com/traitlab/harpia/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/traitlab/harpia/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/traitlab/harpia/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/traitlab/harpia/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/traitlab/harpia/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/traitlab/harpia/compare/v1.0.1...v1.1.0

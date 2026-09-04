@@ -203,35 +203,27 @@
             </wpml:actionActuatorFuncParam>
           </wpml:action>
           <wpml:action>
-            <wpml:actionId>1</wpml:actionId>
-            <wpml:actionActuatorFunc>orientedShoot</wpml:actionActuatorFunc>
+            <wpml:actionId>2</wpml:actionId>
+            <wpml:actionActuatorFunc>focus</wpml:actionActuatorFunc>
             <wpml:actionActuatorFuncParam>
-              <wpml:gimbalPitchRotateAngle>-90</wpml:gimbalPitchRotateAngle>
-              <wpml:gimbalRollRotateAngle>0</wpml:gimbalRollRotateAngle>
-              <wpml:gimbalYawRotateAngle>0</wpml:gimbalYawRotateAngle>
-              <wpml:focusX>0</wpml:focusX>
-              <wpml:focusY>0</wpml:focusY>
-              <wpml:focusRegionWidth>0</wpml:focusRegionWidth>
-              <wpml:focusRegionHeight>0</wpml:focusRegionHeight>
-              <wpml:focalLength>24</wpml:focalLength>
-              <wpml:aircraftHeading>0</wpml:aircraftHeading>
-              <wpml:accurateFrameValid>0</wpml:accurateFrameValid>
+              <wpml:focusX>0.25</wpml:focusX>
+              <wpml:focusY>0.25</wpml:focusY>
+              <wpml:focusRegionWidth>0.5</wpml:focusRegionWidth>
+              <wpml:focusRegionHeight>0.5</wpml:focusRegionHeight>
+              <wpml:isPointFocus>0</wpml:isPointFocus>
+              <wpml:isInfiniteFocus>0</wpml:isInfiniteFocus>
+              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+              <wpml:isCalibrationFocus>0</wpml:isCalibrationFocus>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>
+          <wpml:action>
+            <wpml:actionId>3</wpml:actionId>
+            <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:fileSuffix>3wide</wpml:fileSuffix>
               <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
               <wpml:useGlobalPayloadLensIndex>0</wpml:useGlobalPayloadLensIndex>
               <wpml:payloadLensIndex>visable</wpml:payloadLensIndex>
-              <wpml:targetAngle>0</wpml:targetAngle>
-              <wpml:actionUUID>51ae7825-56de-41d3-90bb-3c9ed6de7960</wpml:actionUUID>
-              <wpml:imageWidth>0</wpml:imageWidth>
-              <wpml:imageHeight>0</wpml:imageHeight>
-              <wpml:AFPos>0</wpml:AFPos>
-              <wpml:gimbalPort>0</wpml:gimbalPort>
-              <wpml:orientedCameraType>88</wpml:orientedCameraType>
-              <wpml:orientedFilePath>51ae7825-56de-41d3-90bb-3c9ed6de7960</wpml:orientedFilePath>
-              <wpml:orientedFileMD5/>
-              <wpml:orientedFileSize>0</wpml:orientedFileSize>
-              <wpml:orientedFileSuffix>3wide</wpml:orientedFileSuffix>
-              <wpml:orientedCameraShutterTime>0.00625</wpml:orientedCameraShutterTime>
-              <wpml:orientedPhotoMode>normalPhoto</wpml:orientedPhotoMode>
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>

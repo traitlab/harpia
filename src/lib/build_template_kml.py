@@ -53,6 +53,7 @@ class BuildTemplateKML:
         self.accurate_frame_valid = "0"
         self.payload_position_index = "0"
         self.use_global_payload_lens_index = "0"
+        self.payload_lens_index = DRONE_MODEL_CONFIG[config.drone_model]["kml_payload_lens_index"]
         self.target_angle = "0"
         self.image_width = "0"
         self.image_height = "0"
@@ -441,6 +442,16 @@ class BuildTemplateKML:
         return action
 
     # -------------------------------------------------------------------------
+    def addPayloadLensIndex(self, action_actuator_func_param):
+        # The RC writes payloadLensIndex only for some payloads and files; see
+        # DRONE_MODEL_CONFIG. Where it writes none, we write none either.
+        if self.payload_lens_index is None:
+            return
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadLensIndex"
+        ).text = self.payload_lens_index
+
+    # -------------------------------------------------------------------------
     def addPlacemarkActionOrientedShoot(
         self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath
     ):
@@ -489,6 +500,7 @@ class BuildTemplateKML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
         ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}targetAngle"
         ).text = self.target_angle
@@ -526,6 +538,30 @@ class BuildTemplateKML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}orientedPhotoMode"
         ).text = self.oriented_photo_mode
+
+        return action
+
+    # -------------------------------------------------------------------------
+    def addPlacemarkActionTakePhoto(self, idx, fileSuffix):
+        # Child order mirrors what the remote controller emits, as captured in
+        # templates/<model>-onewpt-wpmz/template.kml.
+        action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionActuatorFunc").text = "takePhoto"
+
+        action_actuator_func_param = ET.SubElement(
+            action, f"{{{self.namespaces['wpml']}}}actionActuatorFuncParam"
+        )
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}fileSuffix"
+        ).text = fileSuffix
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadPositionIndex"
+        ).text = self.payload_position_index
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
+        ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
 
         return action
 
@@ -583,14 +619,18 @@ class BuildTemplateKML:
 
         # Add photo actions based on drone model configuration
         photo_actions = DRONE_MODEL_CONFIG[config.drone_model]["photo_actions"]
-        for idx, action_config in enumerate(photo_actions):
-            wpml_action = self.addPlacemarkActionOrientedShoot(
-                str(idx),
-                action_config["focal_length"],
-                str(point_id) + action_config["suffix"],
-                action_config["uuid"],
-                action_config["uuid"],
-            )
+        for action_idx, action_config in enumerate(photo_actions):
+            file_suffix = str(point_id) + action_config["suffix"]
+            if action_config.get("actuator_func") == "takePhoto":
+                wpml_action = self.addPlacemarkActionTakePhoto(str(action_idx), file_suffix)
+            else:
+                wpml_action = self.addPlacemarkActionOrientedShoot(
+                    str(action_idx),
+                    action_config["focal_length"],
+                    file_suffix,
+                    action_config["uuid"],
+                    action_config["uuid"],
+                )
             wpml_actionGroup.append(wpml_action)
 
         wpml_isRisky = ET.SubElement(placemark, f"{{{self.namespaces['wpml']}}}isRisky")

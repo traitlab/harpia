@@ -83,7 +83,7 @@ Create a configuration file (e.g., `config.yaml`) with your settings. A detailed
 csv_path: /path/to/waypoints.csv # Optional
 features_path: /path/to/features.gpkg # Optional
 dsm_path: /path/to/dsm.tif # Optional
-drone_model: m3e  # 'm3e' and 'm4e' are currently supported
+drone_model: m3e  # 'm3e', 'm4e' and 'm4d' are currently supported
 output_folder: /path/to/output  # Optional
 output_filename: my_mission  # Optional
 
@@ -118,7 +118,7 @@ debug_mode: false
 - `--csv, -csv`: Path to existing waypoints CSV file
 - `--features, -f`: Path to input features file (GeoPackage, Shapefile)
 - `--dsm, -dsm`: Path to DSM raster file
-- `--drone-model, -m`: Model of the drone to carry out the mission ('m3e' or 'm4e')
+- `--drone-model, -m`: Model of the drone to carry out the mission ('m3e', 'm4e' or 'm4d')
 - `--output-path, -op`: Output directory path (optional)
 - `--output-filename, -of`: Custom output filename without extension (optional)
 

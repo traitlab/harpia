@@ -94,8 +94,8 @@ parser.add_argument(
     "-m",
     type=str,
     required=False,
-    choices=["m3e", "M3E", "m4e", "M4E"],
-    help="Model of drone used. M3E and M4E are currently supported.",
+    choices=["m3e", "M3E", "m4e", "M4E", "m4d", "M4D"],
+    help="Model of drone used. M3E, M4E and M4D are currently supported.",
 )
 
 parser.add_argument(

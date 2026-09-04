@@ -100,6 +100,10 @@ def test_kml_placemark_count_and_photo_actions(configured, csv_path):
     assert len(shoots) == 2
 
 
+def _local_tags(param):
+    return [child.tag.split("}")[-1] for child in param]
+
+
 def test_kml_m4e_has_three_photo_actions(configured, csv_path):
     configured.csv_path = csv_path
     configured.drone_model = "m4e"
@@ -107,10 +111,119 @@ def test_kml_m4e_has_three_photo_actions(configured, csv_path):
     b.setup()
     b.generate()
     photos_pm = _placemarks(b.folder)[2]
-    shoots = photos_pm.findall(
-        "wpml:actionGroup/wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS
-    )
-    assert len(shoots) == 3  # m4e: tele + med + wide
+    group = photos_pm.find("wpml:actionGroup", NS)
+    # m4e: tele + med via orientedShoot, wide via takePhoto (needed for RTK).
+    shoots = group.findall("wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS)
+    assert len(shoots) == 2
+    photos = group.findall("wpml:action[wpml:actionActuatorFunc='takePhoto']", NS)
+    assert len(photos) == 1
+    param = photos[0].find("wpml:actionActuatorFuncParam", NS)
+    # Element set and order as emitted by the RC: template.kml carries no lens index.
+    assert _local_tags(param) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+    ]
+    assert param.find("wpml:fileSuffix", NS).text.endswith("wide")
+    # The M4E RC leaves the lens index out of template.kml entirely.
+    shoot = shoots[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:payloadLensIndex", NS) is None
+    # template.kml has no focus action; that one is waylines-only.
+    assert group.findall("wpml:action[wpml:actionActuatorFunc='focus']", NS) == []
+
+
+def test_wpml_m4e_takephoto_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4e"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    actions = group.findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    # The RC precedes takePhoto with a centred focus action.
+    assert funcs == ["orientedShoot", "orientedShoot", "focus", "takePhoto"]
+    # actionIds run 0..N-1 contiguously, focus included.
+    assert [a.find("wpml:actionId", NS).text for a in actions] == ["0", "1", "2", "3"]
+
+    param = actions[3].find("wpml:actionActuatorFuncParam", NS)
+    assert _local_tags(param) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+        "payloadLensIndex",
+    ]
+    assert param.find("wpml:fileSuffix", NS).text.endswith("wide")
+    # "visable" is DJI's own spelling, as emitted by the RC.
+    assert param.find("wpml:payloadLensIndex", NS).text == "visable"
+
+    # The M4E RC does write the lens index on orientedShoot in waylines.wpml.
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+
+    focus = actions[2].find("wpml:actionActuatorFuncParam", NS)
+    assert focus.find("wpml:focusX", NS).text == "0.25"
+    assert focus.find("wpml:focusRegionWidth", NS).text == "0.5"
+
+
+def test_kml_m4d_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4d"
+    b = BuildTemplateKML()
+    b.setup()
+    b.generate()
+    # Mission header comes straight from templates/m4d-onewpt-wpmz/template.kml.
+    assert b.root.find(".//wpml:droneEnumValue", NS).text == "100"
+    assert b.root.find(".//wpml:payloadEnumValue", NS).text == "98"
+
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    actions = group.findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    # Same three-shot sequence as the M4E; no focus action in template.kml.
+    assert funcs == ["orientedShoot", "orientedShoot", "takePhoto"]
+
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:orientedCameraType", NS).text == "98"
+    # Unlike the M4E, the M4D RC writes the lens index into template.kml too.
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+    photo = actions[2].find("wpml:actionActuatorFuncParam", NS)
+    assert _local_tags(photo) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+        "payloadLensIndex",
+    ]
+
+
+def test_wpml_m4d_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4d"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    assert b.root.find(".//wpml:droneEnumValue", NS).text == "100"
+    assert b.root.find(".//wpml:payloadEnumValue", NS).text == "98"
+
+    actions = _placemarks(b.folder)[2].find("wpml:actionGroup", NS).findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    assert funcs == ["orientedShoot", "orientedShoot", "focus", "takePhoto"]
+
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:orientedCameraType", NS).text == "98"
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+    photo = actions[3].find("wpml:actionActuatorFuncParam", NS)
+    assert photo.find("wpml:payloadLensIndex", NS).text == "visable"
+
+
+def test_m3e_emits_no_payload_lens_index(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m3e"
+    for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+        builder.setup()
+        builder.generate()
+        group = _placemarks(builder.folder)[2].find("wpml:actionGroup", NS)
+        # No RC export to compare against for the M3E, so nothing is emitted.
+        assert group.findall(".//wpml:payloadLensIndex", NS) == []
 
 
 def test_wpml_saved_file_is_wellformed_xml(configured, csv_path, tmp_path):

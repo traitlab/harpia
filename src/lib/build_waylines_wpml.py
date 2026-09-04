@@ -50,6 +50,15 @@ class BuildWaylinesWPML:
         self.focus_region_width = "0"
         self.focus_region_height = "0"
 
+        # Standalone focus action the RC emits just before takePhoto (waylines only).
+        self.focus_action_x = "0.25"
+        self.focus_action_y = "0.25"
+        self.focus_action_region_width = "0.5"
+        self.focus_action_region_height = "0.5"
+        self.is_point_focus = "0"
+        self.is_infinite_focus = "0"
+        self.is_calibration_focus = "0"
+
         self.gimbalRotateMode = "absoluteAngle"
         self.gimbalPitchRotateEnable = "1"
         self.gimbalRollRotateEnable = "0"
@@ -64,6 +73,7 @@ class BuildWaylinesWPML:
         self.accurate_frame_valid = "0"
         self.payload_position_index = "0"
         self.use_global_payload_lens_index = "0"
+        self.payload_lens_index = DRONE_MODEL_CONFIG[config.drone_model]["wpml_payload_lens_index"]
         self.target_angle = "0"
         self.image_width = "0"
         self.image_height = "0"
@@ -466,6 +476,16 @@ class BuildWaylinesWPML:
         return action
 
     # -------------------------------------------------------------------------
+    def addPayloadLensIndex(self, action_actuator_func_param):
+        # The RC writes payloadLensIndex only for some payloads and files; see
+        # DRONE_MODEL_CONFIG. Where it writes none, we write none either.
+        if self.payload_lens_index is None:
+            return
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadLensIndex"
+        ).text = self.payload_lens_index
+
+    # -------------------------------------------------------------------------
     def addPlacemarkActionOrientedShoot(
         self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath
     ):
@@ -514,6 +534,7 @@ class BuildWaylinesWPML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
         ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}targetAngle"
         ).text = self.target_angle
@@ -555,6 +576,68 @@ class BuildWaylinesWPML:
         return action
 
     # -------------------------------------------------------------------------
+    def addPlacemarkActionTakePhoto(self, idx, fileSuffix):
+        # Child order mirrors what the remote controller emits, as captured in
+        # templates/<model>-onewpt-wpmz/waylines.wpml.
+        action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionActuatorFunc").text = "takePhoto"
+
+        action_actuator_func_param = ET.SubElement(
+            action, f"{{{self.namespaces['wpml']}}}actionActuatorFuncParam"
+        )
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}fileSuffix"
+        ).text = fileSuffix
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadPositionIndex"
+        ).text = self.payload_position_index
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
+        ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
+
+        return action
+
+    # -------------------------------------------------------------------------
+    def addPlacemarkActionFocus(self, idx):
+        # The remote controller precedes every takePhoto with a centred half-frame
+        # focus action; see templates/<model>-onewpt-wpmz/waylines.wpml.
+        action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionActuatorFunc").text = "focus"
+
+        action_actuator_func_param = ET.SubElement(
+            action, f"{{{self.namespaces['wpml']}}}actionActuatorFuncParam"
+        )
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusX"
+        ).text = self.focus_action_x
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusY"
+        ).text = self.focus_action_y
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusRegionWidth"
+        ).text = self.focus_action_region_width
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusRegionHeight"
+        ).text = self.focus_action_region_height
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isPointFocus"
+        ).text = self.is_point_focus
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isInfiniteFocus"
+        ).text = self.is_infinite_focus
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadPositionIndex"
+        ).text = self.payload_position_index
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isCalibrationFocus"
+        ).text = self.is_calibration_focus
+
+        return action
+
+    # -------------------------------------------------------------------------
     def addTreePhotosPlacemark(
         self, idx, lat_y, lon_x, elevation_from_dsm, point_id, actionGroupId, actionGroupIndex
     ):
@@ -589,15 +672,23 @@ class BuildWaylinesWPML:
 
         # Add photo actions based on drone model configuration
         photo_actions = DRONE_MODEL_CONFIG[config.drone_model]["photo_actions"]
-        for idx, action_config in enumerate(photo_actions):
-            wpml_action = self.addPlacemarkActionOrientedShoot(
-                str(idx),
-                action_config["focal_length"],
-                str(point_id) + action_config["suffix"],
-                action_config["uuid"],
-                action_config["uuid"],
-            )
+        action_idx = 0
+        for action_config in photo_actions:
+            file_suffix = str(point_id) + action_config["suffix"]
+            if action_config.get("actuator_func") == "takePhoto":
+                wpml_actionGroup.append(self.addPlacemarkActionFocus(str(action_idx)))
+                action_idx += 1
+                wpml_action = self.addPlacemarkActionTakePhoto(str(action_idx), file_suffix)
+            else:
+                wpml_action = self.addPlacemarkActionOrientedShoot(
+                    str(action_idx),
+                    action_config["focal_length"],
+                    file_suffix,
+                    action_config["uuid"],
+                    action_config["uuid"],
+                )
             wpml_actionGroup.append(wpml_action)
+            action_idx += 1
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)

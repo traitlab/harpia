@@ -20,7 +20,7 @@ features_path: null # e.g., 'path/to/features.gpkg'
 dsm_path: null # e.g., 'path/to/dsm.tif'
 
 # Model of the drone to carry out the mission
-drone_model: m3e # 'm3e' and 'm4e' are currently supported
+drone_model: m3e # 'm3e', 'm4e' and 'm4d' are currently supported
 
 # Output configuration
 # Custom output directory path. If not set, default is input file (either CSV or features) directory.
