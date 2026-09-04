@@ -76,7 +76,6 @@ parser.add_argument(
 )
 parser.add_argument(
     "--csv",
-    "-csv",
     type=str,
     required=False,
     help="Path to the input CSV file in the right format containing waypoints. If not provided, it will be generated from features.",
@@ -88,7 +87,7 @@ parser.add_argument(
     required=False,
     help="Path to the input features file (e.g., GeoPackage, Shapefile).",
 )
-parser.add_argument("--dsm", "-dsm", type=str, required=False, help="Path to the DSM raster file.")
+parser.add_argument("--dsm", "-d", type=str, required=False, help="Path to the DSM raster file.")
 parser.add_argument(
     "--drone-model",
     "-m",
@@ -100,14 +99,14 @@ parser.add_argument(
 
 parser.add_argument(
     "--output-path",
-    "-op",
+    "-o",
     type=str,
     required=False,
     help="Custom output directory path (default: same directory as input file)",
 )
 parser.add_argument(
     "--output-filename",
-    "-of",
+    "-n",
     type=str,
     required=False,
     help="Custom output filename without extension (default: same as input file). ",
@@ -115,7 +114,7 @@ parser.add_argument(
 
 # Waypoint Generation Settings
 parser.add_argument(
-    "--aoi", "-aoi", type=str, required=False, help="Path to the AOI file to filter features."
+    "--aoi", "-a", type=str, required=False, help="Path to the AOI file to filter features."
 )
 parser.add_argument("--aoi-index", "-i", type=int, help="Index of the AOI polygon to use.")
 parser.add_argument(
@@ -123,7 +122,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--takeoff-coords",
-    "-to",
+    "-t",
     type=float,
     nargs=2,
     metavar=("X", "Y"),
@@ -132,7 +131,6 @@ parser.add_argument(
 )
 parser.add_argument(
     "--takeoff-coords-projected",
-    "-proj",
     action="store_true",
     default=False,
     help="Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84))",
@@ -141,27 +139,25 @@ parser.add_argument(
 # Touch-sky Settings
 parser.add_argument(
     "--touch-sky",
-    "-ts",
+    "-s",
     action="store_true",
     default=False,
     help="Enable touch-sky feature where drone flies up periodically (default: False)",
 )
 parser.add_argument(
     "--touch-sky-interval",
-    "-n",
     type=int,
     default=10,
     help="Number of features between each touch-sky action (default: 10, min: 5)",
 )
 parser.add_argument(
     "--touch-sky-altitude",
-    "-alt",
     type=int,
     default=100,
     help="Altitude in meters above DSM for touch-sky action (default: 100, min: 16, max: 200)",
 )
 
-parser.add_argument("--debug", "-d", action="store_true", help="Run in debug mode (default: False)")
+parser.add_argument("--debug", "-v", action="store_true", help="Run in debug mode (default: False)")
 
 args = parser.parse_args()
 

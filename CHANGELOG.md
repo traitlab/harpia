@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] - 2026-09-04
+## [1.3.0] - 2026-09-04
 
 ### Added
 
@@ -16,6 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sequence as the M4E and differs only in its drone (`100`), payload (`98`)
   and oriented-camera (`98`) enum values, plus a `payloadLensIndex` that its
   remote controller writes into `template.kml` as well as `waylines.wpml`.
+
+### Changed
+
+- **Breaking.** Command-line short options now follow the POSIX convention of a
+  single character after a single dash. The multi-character aliases (`-csv`,
+  `-dsm`, `-op`, `-of`, `-aoi`, `-to`, `-proj`, `-ts`, `-alt`) are gone; every
+  option keeps its `--long` form, which is what the documented examples use.
+
+  | Option | Was | Now |
+  | --- | --- | --- |
+  | `--csv` | `-csv` | *(long form only)* |
+  | `--dsm` | `-dsm` | `-d` |
+  | `--output-path` | `-op` | `-o` |
+  | `--output-filename` | `-of` | `-n` |
+  | `--aoi` | `-aoi` | `-a` |
+  | `--takeoff-coords` | `-to` | `-t` |
+  | `--takeoff-coords-projected` | `-proj` | *(long form only)* |
+  | `--touch-sky` | `-ts` | `-s` |
+  | `--touch-sky-interval` | `-n` | *(long form only)* |
+  | `--touch-sky-altitude` | `-alt` | *(long form only)* |
+  | `--debug` | `-d` | `-v` |
+
+  Note that `-d` changed hands: it used to mean `--debug` and now means `--dsm`.
+  A stale `-d` errors with "expected one argument" rather than misbehaving.
 
 ### Fixed
 
@@ -125,8 +149,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mission package (template KML + waylines WPML). Includes the touch-sky
   feature, optional takeoff-site coordinates, and AOI filtering.
 
-[Unreleased]: https://github.com/traitlab/harpia/compare/v1.2.1...HEAD
-[1.2.1]: https://github.com/traitlab/harpia/compare/v1.2.0...v1.2.1
+[Unreleased]: https://github.com/traitlab/harpia/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/traitlab/harpia/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/traitlab/harpia/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/traitlab/harpia/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/traitlab/harpia/compare/v1.0.1...v1.1.0

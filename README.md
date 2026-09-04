@@ -115,15 +115,15 @@ debug_mode: false
 
 #### 📁 Input/Output Settings
 - `--config, -c`: Path to YAML configuration file
-- `--csv, -csv`: Path to existing waypoints CSV file
+- `--csv`: Path to existing waypoints CSV file
 - `--features, -f`: Path to input features file (GeoPackage, Shapefile)
-- `--dsm, -dsm`: Path to DSM raster file
+- `--dsm, -d`: Path to DSM raster file
 - `--drone-model, -m`: Model of the drone to carry out the mission ('m3e', 'm4e' or 'm4d')
-- `--output-path, -op`: Output directory path (optional)
-- `--output-filename, -of`: Custom output filename without extension (optional)
+- `--output-path, -o`: Output directory path (optional)
+- `--output-filename, -n`: Custom output filename without extension (optional)
 
 #### 🗺️ Area of Interest (AOI) Settings
-- `--aoi, -aoi`: Path to AOI file for filtering features (optional)
+- `--aoi, -a`: Path to AOI file for filtering features (optional)
 - `--aoi-index, -i`: 1-based index of the AOI polygon to use; requires `--aoi-qualifier` (optional)
 - `--aoi-qualifier, -q`: Qualifier appended to output filenames, up to 8 characters (optional)
 
@@ -132,16 +132,16 @@ There are two ways to select a single polygon from the AOI file:
 - **By attribute**: pass `--aoi-qualifier` on its own. The AOI file must then contain a `qualifier` column, and the feature whose value matches is selected.
 
 #### 🎯 Waypoint Generation Settings
-- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
-- `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
+- `--takeoff-coords, -t`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
+- `--takeoff-coords-projected`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
 
 #### 🌤️ Touch-Sky Settings
-- `--touch-sky, -ts`: Enable touch-sky feature (default: False)
-- `--touch-sky-interval, -n`: Number of features between touch-sky actions (default: 10, min: 5)
-- `--touch-sky-altitude, -alt`: Touch-sky altitude in meters above DSM (default: 100, min: 16, max: 200)
+- `--touch-sky, -s`: Enable touch-sky feature (default: False)
+- `--touch-sky-interval`: Number of features between touch-sky actions (default: 10, min: 5)
+- `--touch-sky-altitude`: Touch-sky altitude in meters above DSM (default: 100, min: 16, max: 200)
 
 #### 🔧 System Settings
-- `--debug, -d`: Run in debug mode
+- `--debug, -v`: Run in debug mode
 
 ## 🚀 Usage Examples
 
