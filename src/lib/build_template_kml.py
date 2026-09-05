@@ -696,10 +696,12 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_use_global_turn_param = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
-        )
-        wpml_use_global_turn_param.text = self.use_global_turn_param
+        # The apex sits directly above the waypoint below it, so its two legs
+        # double back on each other. A coordinateTurn there is a reversal: the
+        # aircraft rounds the corner off and levels out short of the altitude
+        # the climb exists to reach. It is a point that has to be flown to.
+        wpml_waypointTurnParam = self.addWaypointTurnParamStop()
+        placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"

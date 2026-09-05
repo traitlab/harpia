@@ -821,7 +821,13 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        # The apex sits directly above the waypoint below it, so its two legs
+        # double back on each other. A coordinateTurn there is a reversal: the
+        # aircraft rounds the corner off and levels out short of the altitude
+        # the climb exists to reach. It is a point that has to be flown to.
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(

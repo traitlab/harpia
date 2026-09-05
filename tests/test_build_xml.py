@@ -298,6 +298,48 @@ def test_wpml_turn_damping_fits_the_shortest_adjacent_leg(configured, csv_path):
     assert len(dampings) > 1
 
 
+# 5 waypoints, so the 5th trips a touch_sky_interval of 5 and adds an apex.
+TOUCH_SKY_WPT_ROWS = [
+    (i + 1, -74.000 - i * 0.002, 46.0 + i * 0.001, 100 + i, i + 1) for i in range(5)
+]
+TOUCH_SKY_CPT_ROWS = [(0, -74.001 - i * 0.002, 46.0005 + i * 0.001, 105 + i, 0) for i in range(4)]
+TOUCH_SKY_ALTITUDE = 100
+
+
+def test_touch_sky_apex_is_a_full_stop(configured, tmp_path):
+    # The apex sits directly above the waypoint below it, so its two legs double
+    # back on each other. Arcing a reversal rounds the corner off and levels the
+    # aircraft out below the altitude the climb exists to reach.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "touch_sky.csv", TOUCH_SKY_WPT_ROWS, TOUCH_SKY_CPT_ROWS
+    )
+    configured.touch_sky = True
+    configured.touch_sky_interval = 5
+    configured.touch_sky_altitude = TOUCH_SKY_ALTITUDE
+    try:
+        wpml = BuildWaylinesWPML()
+        wpml.setup()
+        wpml.generate()
+        kml = BuildTemplateKML()
+        kml.setup()
+        kml.generate()
+    finally:
+        configured.touch_sky = False
+
+    placemarks = _placemarks(wpml.folder)
+    heights = [float(pm.find("wpml:executeHeight", NS).text) for pm in placemarks]
+    apex = heights.index(max(heights))
+    # The apex is the one waypoint flown to touch_sky_altitude above its checkpoint.
+    assert max(heights) == pytest.approx(TOUCH_SKY_CPT_ROWS[-1][3] + TOUCH_SKY_ALTITUDE)
+
+    turn = placemarks[apex].find("wpml:waypointTurnParam", NS)
+    assert turn.find("wpml:waypointTurnMode", NS).text == STOP_TURN
+    assert turn.find("wpml:waypointTurnDampingDist", NS).text == "0"
+
+    kml_turn = _placemarks(kml.folder)[apex].find("wpml:waypointTurnParam", NS)
+    assert kml_turn.find("wpml:waypointTurnMode", NS).text == STOP_TURN
+
+
 def test_m3e_emits_no_payload_lens_index(configured, csv_path):
     configured.csv_path = csv_path
     configured.drone_model = "m3e"

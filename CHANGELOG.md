@@ -59,6 +59,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when a mission is opened and re-saved, so a mission flies straight off the
   transfer.
 
+- The touch-sky apex keeps the full stop. Its two legs double back on each
+  other, so it is the one corner an arc would round off entirely, levelling the
+  aircraft out short of the altitude the climb exists to reach.
+
 ### Fixed
 
 - M4E: the 1x photo of each waypoint is now taken with a `takePhoto` action in
