@@ -17,7 +17,8 @@ class BuildWaylinesWPML:
         self.wpt_csv_properties = None
         self.cpt_csv_properties = None
 
-        self.waypointSpeed = "15"
+        # Set by setup() from the template's autoFlightSpeed.
+        self.waypointSpeed = None
         # A waypoint's parameters govern the leg leaving it, so this speed is the
         # final descent onto the tree, not the leg down to the approach waypoint.
         self.waypointSpeed_approach = "3"
@@ -167,6 +168,10 @@ class BuildWaylinesWPML:
 
         # Find the Folder element
         self.folder = self.root.find(".//kml:Folder", self.namespaces)
+
+        # A wayline has no useGlobalSpeed: every placemark states its own.
+        self.waypointSpeed = self.folder.find("wpml:autoFlightSpeed", self.namespaces).text
+
         # Remove all existing Placemark elements with Point
         for placemark in self.folder.findall("kml:Placemark", self.namespaces):
             self.folder.remove(placemark)

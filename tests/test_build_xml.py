@@ -64,11 +64,26 @@ def test_wpml_required_dji_elements_present(configured, csv_path):
     assert first.find("wpml:executeHeight", NS) is not None
     assert first.find("wpml:waypointSpeed", NS) is not None
     assert first.find("wpml:actionGroup", NS) is not None
-    # waypointSpeed reflects the configured global speed (15) for fly-through pts.
+    # waypointSpeed reflects the wayline's autoFlightSpeed for fly-through pts.
     assert first.find("wpml:waypointSpeed", NS).text == b.waypointSpeed
     # indices run 0..N-1 contiguously across all placemarks.
     indices = [int(p.find("wpml:index", NS).text) for p in placemarks]
     assert indices == list(range(len(placemarks)))
+
+
+@pytest.mark.parametrize(("model", "speed"), [("m3e", "15"), ("m4e", "21"), ("m4d", "21")])
+def test_wpml_transit_speed_matches_wayline_speed(configured, csv_path, model, speed):
+    configured.csv_path = csv_path
+    configured.drone_model = model
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    # Transit waypoints fly at the wayline speed, which differs by model.
+    assert b.folder.find("wpml:autoFlightSpeed", NS).text == speed
+    speeds = [p.find("wpml:waypointSpeed", NS).text for p in _placemarks(b.folder)]
+    assert set(speeds) == {speed, b.waypointSpeed_approach}
+    # Only the approach waypoint, index 1 of each group of 4, slows down.
+    assert speeds[1::4] == [b.waypointSpeed_approach] * len(WPT_ROWS)
 
 
 def test_wpml_coordinates_passthrough(configured, csv_path):

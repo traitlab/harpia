@@ -74,6 +74,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only in `waylines.wpml`, and a centred `focus` action emitted just before it.
 - M4E: `orientedShoot` actions in `waylines.wpml` now carry the
   `payloadLensIndex` (`visable`) the remote controller writes; it was missing.
+- Transit waypoints in `waylines.wpml` were hardcoded to 15 m/s, contradicting
+  the M4E and M4D templates, which declare 21 m/s. The speed now comes from the
+  template's own `wpml:autoFlightSpeed`. The approach waypoint keeps its 3 m/s.
 
 ## [1.2.0] - 2026-08-26
 
