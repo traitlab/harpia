@@ -98,10 +98,7 @@
           <wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode>
           <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
         </wpml:waypointHeadingParam>
-        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
-        </wpml:waypointTurnParam>
+        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
         <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:isRisky>0</wpml:isRisky>
       </Placemark>
@@ -116,7 +113,10 @@
         <wpml:height>434.879486083984</wpml:height>
         <wpml:useGlobalSpeed>1</wpml:useGlobalSpeed>
         <wpml:useGlobalHeadingParam>1</wpml:useGlobalHeadingParam>
-        <wpml:useGlobalTurnParam>1</wpml:useGlobalTurnParam>
+        <wpml:waypointTurnParam>
+          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
+          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
+        </wpml:waypointTurnParam>
         <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:actionGroup>
           <wpml:actionGroupId>1</wpml:actionGroupId>

@@ -96,8 +96,8 @@
           <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
         </wpml:waypointHeadingParam>
         <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
+          <wpml:waypointTurnMode>coordinateTurn</wpml:waypointTurnMode>
+          <wpml:waypointTurnDampingDist>1.66666666666667</wpml:waypointTurnDampingDist>
         </wpml:waypointTurnParam>
         <wpml:useStraightLine>0</wpml:useStraightLine>
         <wpml:waypointGimbalHeadingParam>
@@ -124,8 +124,8 @@
           <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
         </wpml:waypointHeadingParam>
         <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>coordinateTurn</wpml:waypointTurnMode>
-          <wpml:waypointTurnDampingDist>1.66666666666667</wpml:waypointTurnDampingDist>
+          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
+          <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
         </wpml:waypointTurnParam>
         <wpml:useStraightLine>1</wpml:useStraightLine>
         <wpml:actionGroup>

@@ -230,9 +230,9 @@ def test_kml_turn_mode_matches_rc_export(configured, csv_path):
     for i, pm in enumerate(placemarks):
         turn_param = pm.find("wpml:waypointTurnParam", NS)
         use_global = pm.find("wpml:useGlobalTurnParam", NS)
-        if i % 4 == 1:
-            # Approach waypoint: overrides the global coordinateTurn, so the
-            # aircraft stops at the photo waypoint that follows it.
+        if i % 4 == 2:
+            # Photo waypoint: overrides the global coordinateTurn so the
+            # aircraft holds still for the whole burst.
             assert use_global is None
             assert turn_param.find("wpml:waypointTurnMode", NS).text == STOP_TURN
             assert turn_param.find("wpml:waypointTurnDampingDist", NS).text == "0"
@@ -252,25 +252,50 @@ def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
 
     modes = []
     for i, pm in enumerate(placemarks):
-        turn_param = pm.find("wpml:waypointTurnParam", NS)
-        mode = turn_param.find("wpml:waypointTurnMode", NS).text
-        damping = turn_param.find("wpml:waypointTurnDampingDist", NS).text
-        straight = pm.find("wpml:useStraightLine", NS).text
+        mode = pm.find("wpml:waypointTurnParam/wpml:waypointTurnMode", NS).text
         modes.append(mode)
-        if mode == STOP_TURN:
-            assert damping == "0"
-        else:
-            assert damping == "1.66666666666667"
         # Only the approach waypoint is exported with useStraightLine=0.
-        assert straight == ("0" if i % 4 == 1 else "1")
+        assert pm.find("wpml:useStraightLine", NS).text == ("0" if i % 4 == 1 else "1")
 
-    # Approach waypoints stop; so do the two ends of the wayline, whatever the
-    # global turn mode says. Everything else is arced through.
+    # Photo waypoints stop so the camera fires from a standstill; so do the two
+    # ends of the wayline, whatever the global turn mode says. Everything else
+    # is arced through.
     expected = [
-        STOP_TURN if (i % 4 == 1 or i in (0, last)) else "coordinateTurn"
+        STOP_TURN if (i % 4 == 2 or i in (0, last)) else "coordinateTurn"
         for i in range(len(placemarks))
     ]
     assert modes == expected
+
+
+def test_wpml_turn_damping_fits_the_shortest_adjacent_leg(configured, csv_path):
+    # A radius wider than half the leg it blends into is rejected in flight with
+    # "waypoint turning intercept error (1550)", so each arced waypoint carries a
+    # radius sized from its own geometry.
+    configured.csv_path = csv_path
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    placemarks = _placemarks(b.folder)
+    points = [b.placemarkPoint(pm) for pm in placemarks]
+
+    dampings = set()
+    for i, pm in enumerate(placemarks):
+        mode = pm.find("wpml:waypointTurnParam/wpml:waypointTurnMode", NS).text
+        damping = float(pm.find("wpml:waypointTurnParam/wpml:waypointTurnDampingDist", NS).text)
+        if mode == STOP_TURN:
+            assert damping == 0
+            continue
+        legs = [
+            b.legLength(points[j], points[k])
+            for j, k in ((i - 1, i), (i, i + 1))
+            if j >= 0 and k < len(points)
+        ]
+        assert damping == pytest.approx(min(legs) / 3)
+        assert damping < min(legs) / 2
+        dampings.add(damping)
+
+    # The radii track the legs they sit in, so they are not all the same value.
+    assert len(dampings) > 1
 
 
 def test_m3e_emits_no_payload_lens_index(configured, csv_path):

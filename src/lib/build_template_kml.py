@@ -24,8 +24,8 @@ class BuildTemplateKML:
         self.use_global_turn_param = "1"
         self.use_straight_line = "0"
 
-        # waypointTurnParam: overrides the global coordinateTurn on the approach
-        # waypoint, which is what halts the aircraft at the photo point below it.
+        # waypointTurnParam: the photo waypoint's override of the global
+        # coordinateTurn. The aircraft holds still there for the whole burst.
         self.waypointTurnMode_stop = "toPointAndStopWithDiscontinuityCurvature"
         self.waypointTurnDampingDist_stop = "0"
 
@@ -364,8 +364,10 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_waypointTurnParam = self.addWaypointTurnParamStop()
-        placemark.append(wpml_waypointTurnParam)
+        wpml_use_global_turn_param = ET.SubElement(
+            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
+        )
+        wpml_use_global_turn_param.text = self.use_global_turn_param
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
@@ -623,10 +625,8 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_useGlobalTurnParam = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
-        )
-        wpml_useGlobalTurnParam.text = self.use_global_turn_param
+        wpml_waypointTurnParam = self.addWaypointTurnParamStop()
+        placemark.append(wpml_waypointTurnParam)
 
         wpml_useStraightLine = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"

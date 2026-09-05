@@ -42,12 +42,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A stale `-d` errors with "expected one argument" rather than misbehaving.
 
 - The global waypoint turn mode (`wpml:globalWaypointTurnMode`) is now
-  `coordinateTurn`. The aircraft arcs
-  through the transit waypoints instead of stopping at each one, cutting the stop-and-go between trees.
-  Two waypoints still override it with a full stop
-  (`toPointAndStopWithDiscontinuityCurvature`): the approach waypoint, which
-  is what halts the aircraft at the photo point below it, and the two ends of
-  the wayline. All three templates changed.
+  `coordinateTurn`. The aircraft arcs through the transit and approach
+  waypoints instead of stopping at each one, cutting the stop-and-go between
+  trees. Two kinds of waypoint still override it with a full stop
+  (`toPointAndStopWithDiscontinuityCurvature`): the photo waypoint, so the
+  camera fires from a standstill, and the two ends of the wayline. All three
+  templates changed.
+
+- `wpml:waypointTurnDampingDist` is now computed per waypoint instead of being
+  a single hardcoded radius. An arc radius wider than half the leg it blends
+  into is rejected in flight with "Waypoint turning intercept error (1550)",
+  and the legs here vary from centimetres to tens of metres: the hop from a
+  transit waypoint down to its approach waypoint collapses whenever a
+  checkpoint sits at the same elevation as its tree. Each radius is now a third
+  of the shorter adjacent leg, reproducing what the remote controller computes
+  when a mission is opened and re-saved, so a mission flies straight off the
+  transfer.
 
 ### Fixed
 
