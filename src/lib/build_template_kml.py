@@ -24,6 +24,11 @@ class BuildTemplateKML:
         self.use_global_turn_param = "1"
         self.use_straight_line = "0"
 
+        # waypointTurnParam: overrides the global coordinateTurn on the approach
+        # waypoint, which is what halts the aircraft at the photo point below it.
+        self.waypointTurnMode_stop = "toPointAndStopWithDiscontinuityCurvature"
+        self.waypointTurnDampingDist_stop = "0"
+
         self.wpml_waypointSpeed = "3"
 
         self.action_group_mode = "sequence"
@@ -359,10 +364,8 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_use_global_turn_param = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
-        )
-        wpml_use_global_turn_param.text = self.use_global_turn_param
+        wpml_waypointTurnParam = self.addWaypointTurnParamStop()
+        placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
@@ -373,6 +376,22 @@ class BuildTemplateKML:
         wpml_is_risky.text = self.is_risky
 
         self.folder.append(placemark)
+
+    # -------------------------------------------------------------------------
+    def addWaypointTurnParamStop(self):
+        wpml_waypointTurnParam = ET.Element(f"{{{self.namespaces['wpml']}}}waypointTurnParam")
+
+        wpml_waypointTurnMode = ET.SubElement(
+            wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnMode"
+        )
+        wpml_waypointTurnMode.text = self.waypointTurnMode_stop
+
+        wpml_waypointTurnDampingDist = ET.SubElement(
+            wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnDampingDist"
+        )
+        wpml_waypointTurnDampingDist.text = self.waypointTurnDampingDist_stop
+
+        return wpml_waypointTurnParam
 
     # -------------------------------------------------------------------------
     def addPlacemarkActionGroup(self, action_group_id, action_group_index):

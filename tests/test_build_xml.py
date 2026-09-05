@@ -215,6 +215,64 @@ def test_wpml_m4d_matches_rc_export(configured, csv_path):
     assert photo.find("wpml:payloadLensIndex", NS).text == "visable"
 
 
+STOP_TURN = "toPointAndStopWithDiscontinuityCurvature"
+
+
+def test_kml_turn_mode_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    b = BuildTemplateKML()
+    b.setup()
+    b.generate()
+    # The Folder-level turn mode is carried over from template.kml unchanged.
+    assert b.root.find(".//wpml:globalWaypointTurnMode", NS).text == "coordinateTurn"
+
+    placemarks = _placemarks(b.folder)
+    for i, pm in enumerate(placemarks):
+        turn_param = pm.find("wpml:waypointTurnParam", NS)
+        use_global = pm.find("wpml:useGlobalTurnParam", NS)
+        if i % 4 == 1:
+            # Approach waypoint: overrides the global coordinateTurn, so the
+            # aircraft stops at the photo waypoint that follows it.
+            assert use_global is None
+            assert turn_param.find("wpml:waypointTurnMode", NS).text == STOP_TURN
+            assert turn_param.find("wpml:waypointTurnDampingDist", NS).text == "0"
+        else:
+            # Every other waypoint defers to the global coordinateTurn.
+            assert turn_param is None
+            assert use_global.text == "1"
+
+
+def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    placemarks = _placemarks(b.folder)
+    last = len(placemarks) - 1
+
+    modes = []
+    for i, pm in enumerate(placemarks):
+        turn_param = pm.find("wpml:waypointTurnParam", NS)
+        mode = turn_param.find("wpml:waypointTurnMode", NS).text
+        damping = turn_param.find("wpml:waypointTurnDampingDist", NS).text
+        straight = pm.find("wpml:useStraightLine", NS).text
+        modes.append(mode)
+        if mode == STOP_TURN:
+            assert damping == "0"
+        else:
+            assert damping == "1.66666666666667"
+        # Only the approach waypoint is exported with useStraightLine=0.
+        assert straight == ("0" if i % 4 == 1 else "1")
+
+    # Approach waypoints stop; so do the two ends of the wayline, whatever the
+    # global turn mode says. Everything else is arced through.
+    expected = [
+        STOP_TURN if (i % 4 == 1 or i in (0, last)) else "coordinateTurn"
+        for i in range(len(placemarks))
+    ]
+    assert modes == expected
+
+
 def test_m3e_emits_no_payload_lens_index(configured, csv_path):
     configured.csv_path = csv_path
     configured.drone_model = "m3e"

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-09-04
+## [1.3.0] - 2026-09-05
 
 ### Added
 
@@ -40,6 +40,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Note that `-d` changed hands: it used to mean `--debug` and now means `--dsm`.
   A stale `-d` errors with "expected one argument" rather than misbehaving.
+
+- The global waypoint turn mode (`wpml:globalWaypointTurnMode`) is now
+  `coordinateTurn`. The aircraft arcs
+  through the transit waypoints instead of stopping at each one, cutting the stop-and-go between trees.
+  Two waypoints still override it with a full stop
+  (`toPointAndStopWithDiscontinuityCurvature`): the approach waypoint, which
+  is what halts the aircraft at the photo point below it, and the two ends of
+  the wayline. All three templates changed.
 
 ### Fixed
 

@@ -17,10 +17,16 @@ class BuildWaylinesWPML:
         self.cpt_csv_properties = None
 
         self.waypointSpeed = "15"
+        # A waypoint's parameters govern the leg leaving it, so this speed is the
+        # final descent onto the tree, not the leg down to the approach waypoint.
         self.waypointSpeed_approach = "3"
-        # waypointTurnParam
-        self.waypointTurnMode = "toPointAndStopWithDiscontinuityCurvature"
-        self.waypointTurnDampingDist = "0"
+        # waypointTurnParam: coordinateTurn mirrors globalWaypointTurnMode in
+        # template.kml, so the aircraft arcs through the next waypoint.
+        self.waypointTurnMode = "coordinateTurn"
+        self.waypointTurnDampingDist = "1.66666666666667"
+        # Full stop; set on the approach waypoint, it halts at the photo point.
+        self.waypointTurnMode_stop = "toPointAndStopWithDiscontinuityCurvature"
+        self.waypointTurnDampingDist_stop = "0"
 
         # waypointGimbalHeadingParam
         self.waypointGimbalPitchAngle = "0"
@@ -30,6 +36,8 @@ class BuildWaylinesWPML:
 
         # Variables for common values
         self.use_straight_line = "1"
+        # The RC exports useStraightLine=0 on the approach waypoint only.
+        self.use_straight_line_approach = "0"
 
         self.waypoint_heading_mode = "followWayline"
         self.waypoint_heading_angle = "0"
@@ -240,6 +248,22 @@ class BuildWaylinesWPML:
                 base_index += 4  # Normal increment by 4
                 action_group_id += 3  # Normal increment by 3
 
+        self.forceStopOnWaylineEnds()
+
+    # -------------------------------------------------------------------------
+    def forceStopOnWaylineEnds(self):
+        # The RC compiles the first and last waypoint as a full stop, whatever
+        # the global turn mode says.
+        placemarks = self.folder.findall("kml:Placemark", self.namespaces)
+        for placemark in (placemarks[0], placemarks[-1]):
+            turn_param = placemark.find("wpml:waypointTurnParam", self.namespaces)
+            turn_param.find(
+                "wpml:waypointTurnMode", self.namespaces
+            ).text = self.waypointTurnMode_stop
+            turn_param.find(
+                "wpml:waypointTurnDampingDist", self.namespaces
+            ).text = self.waypointTurnDampingDist_stop
+
     # -------------------------------------------------------------------------
     def addTreeFirstLastPlacemark(
         self,
@@ -331,18 +355,18 @@ class BuildWaylinesWPML:
         return wpml_waypointHeadingParam
 
     # -------------------------------------------------------------------------
-    def addWaypointTurnParam(self):
+    def addWaypointTurnParam(self, turn_mode=None, damping_dist=None):
         wpml_waypointTurnParam = ET.Element(f"{{{self.namespaces['wpml']}}}waypointTurnParam")
 
         wpml_waypointTurnMode = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnMode"
         )
-        wpml_waypointTurnMode.text = self.waypointTurnMode
+        wpml_waypointTurnMode.text = turn_mode or self.waypointTurnMode
 
         wpml_waypointTurnDampingDist = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnDampingDist"
         )
-        wpml_waypointTurnDampingDist.text = self.waypointTurnDampingDist
+        wpml_waypointTurnDampingDist.text = damping_dist or self.waypointTurnDampingDist
 
         return wpml_waypointTurnParam
 
@@ -387,13 +411,15 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
         )
-        wpml_use_straight_line.text = self.use_straight_line
+        wpml_use_straight_line.text = self.use_straight_line_approach
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)
