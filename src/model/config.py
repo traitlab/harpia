@@ -63,6 +63,13 @@ DRONE_MODEL_CONFIG = {
     },
 }
 
+# Aircraft yaw for a waypoint's photo burst.
+#
+# north: rotate to true north before shooting, so frames of the same tree line up
+#        across missions. arrival: keep the heading the aircraft flew in with,
+#        which saves a rotation at every waypoint. See src/lib/photo_heading.py.
+PHOTO_HEADING_MODES = ("north", "arrival")
+
 
 class Config(BaseModel):
     csv_path: FilePath | None = None
@@ -71,6 +78,8 @@ class Config(BaseModel):
     dsm_path: str | None = None
 
     drone_model: str = "m3e"
+
+    photo_heading: str = "north"
 
     output_folder: Path | None = None
     output_filename: str | None = None
@@ -106,6 +115,14 @@ class Config(BaseModel):
         if v.lower() not in DRONE_MODEL_CONFIG:
             supported_models = ", ".join(DRONE_MODEL_CONFIG.keys())
             raise ValueError(f"drone_model must be one of: {supported_models}")
+        return v.lower()
+
+    @field_validator("photo_heading")
+    @classmethod
+    def validate_photo_heading(cls, v):
+        if v.lower() not in PHOTO_HEADING_MODES:
+            supported_modes = ", ".join(PHOTO_HEADING_MODES)
+            raise ValueError(f"photo_heading must be one of: {supported_modes}")
         return v.lower()
 
     @property
