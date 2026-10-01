@@ -7,6 +7,7 @@ from pathlib import Path
 from xml.dom.minidom import parseString
 
 from src.lib.config import config
+from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.lib.WGS84toEGM96 import download_egm96, transform_to_egm96
 from src.model.config import DRONE_MODEL_CONFIG
 
@@ -21,13 +22,20 @@ class BuildTemplateKML:
         # Variables for common values
         self.use_global_speed = "1"
         self.use_global_heading_param = "1"
-        self.use_global_turn_param = "1"
         self.use_straight_line = "0"
 
-        # waypointTurnParam: the photo waypoint's override of the global
-        # coordinateTurn. The aircraft holds still there for the whole burst.
-        self.waypointTurnMode_stop = "toPointAndStopWithDiscontinuityCurvature"
-        self.waypointTurnDampingDist_stop = "0"
+        # waypointTurnParam: every waypoint states its own turn rather than
+        # deferring to globalWaypointTurnMode, because a deferred waypoint has no
+        # radius and the RC sizes one itself when it regenerates the wayline --
+        # without the cap in src/lib/turn_params.py. These are the same turns as
+        # waylines.wpml, radius for radius.
+        self.waypointTurnMode = COORDINATE_TURN
+        # Seed value. finalizeTurnParams() sizes the real per-waypoint radius.
+        self.waypointTurnDampingDist = "1.66666666666667"
+        # Full stop: the photo waypoint, where the aircraft holds still for the
+        # whole burst, and the two ends of the wayline.
+        self.waypointTurnMode_stop = STOP_TURN
+        self.waypointTurnDampingDist_stop = STOP_DAMPING
 
         self.wpml_waypointSpeed = "3"
 
@@ -275,6 +283,8 @@ class BuildTemplateKML:
                 base_index += 4  # Normal increment by 4
                 action_group_id += 3  # Normal increment by 3
 
+        self.finalizeTurnParams()
+
     # -------------------------------------------------------------------------
     def addTreeFirstLastPlacemark(
         self,
@@ -315,10 +325,9 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_use_global_turn_param = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
+        placemark.append(
+            self.addWaypointTurnParam(self.waypointTurnMode, self.waypointTurnDampingDist)
         )
-        wpml_use_global_turn_param.text = self.use_global_turn_param
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
@@ -364,10 +373,9 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        wpml_use_global_turn_param = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalTurnParam"
+        placemark.append(
+            self.addWaypointTurnParam(self.waypointTurnMode, self.waypointTurnDampingDist)
         )
-        wpml_use_global_turn_param.text = self.use_global_turn_param
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
@@ -381,19 +389,36 @@ class BuildTemplateKML:
 
     # -------------------------------------------------------------------------
     def addWaypointTurnParamStop(self):
+        return self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
+
+    # -------------------------------------------------------------------------
+    def addWaypointTurnParam(self, turn_mode, damping_dist):
         wpml_waypointTurnParam = ET.Element(f"{{{self.namespaces['wpml']}}}waypointTurnParam")
 
         wpml_waypointTurnMode = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnMode"
         )
-        wpml_waypointTurnMode.text = self.waypointTurnMode_stop
+        wpml_waypointTurnMode.text = turn_mode
 
         wpml_waypointTurnDampingDist = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnDampingDist"
         )
-        wpml_waypointTurnDampingDist.text = self.waypointTurnDampingDist_stop
+        wpml_waypointTurnDampingDist.text = damping_dist
 
         return wpml_waypointTurnParam
+
+    # -------------------------------------------------------------------------
+    def finalizeTurnParams(self):
+        # The same radii as waylines.wpml: ellipsoidHeight here carries the
+        # values executeHeight carries there.
+        finalize_turn_params(
+            self.folder.findall("kml:Placemark", self.namespaces),
+            self.namespaces,
+            "ellipsoidHeight",
+            config.buffer_feature,
+        )
 
     # -------------------------------------------------------------------------
     def addPlacemarkActionGroup(self, action_group_id, action_group_index):
