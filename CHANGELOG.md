@@ -24,6 +24,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   airframes. The first feature is reached from the take-off site, which the
   waypoints CSV does not record, so it faces the way out to the second instead.
 
+### Fixed
+
+- A coordinated turn no longer reaches farther than `buffer_feature` from its
+  tree. Every waypoint of a tree sits at the tree's own position, so the climb
+  out of a tree and the descent into the next turn between a vertical leg and a
+  horizontal one; a radius of a third of the shorter leg came off the climb or
+  descent and was then flown sideways. A 15 m climb gave a 5 m radius, so the
+  aircraft left the climb 5 m below the altitude it was climbing to, already
+  heading for the next tree beyond the ground the DSM was sampled over. Each
+  radius is now also capped at `buffer_feature / h`, where `h` is the
+  horizontal share of the steeper adjacent leg: vertical corners are
+  unaffected, and every waypoint still arcs.
+- `template.kml` states every waypoint's turn and radius instead of deferring
+  the non-photo waypoints to `globalWaypointTurnMode`. A deferred waypoint
+  carries no radius, and the remote controller sizes one itself when it
+  regenerates the wayline -- without the cap. Both files take their radii from
+  `src/lib/turn_params.py`.
+- A missing `buffer_feature` is refused rather than flown with uncapped turns.
+
 ## [1.3.0] - 2026-09-05
 
 ### Added

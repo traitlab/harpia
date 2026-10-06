@@ -1,5 +1,4 @@
 import csv
-import math
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -8,6 +7,7 @@ from xml.dom.minidom import parseString
 
 from src.lib.config import config
 from src.lib.photo_heading import photo_headings
+from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.model.config import DRONE_MODEL_CONFIG
 
 
@@ -26,19 +26,14 @@ class BuildWaylinesWPML:
         # waypointTurnParam: coordinateTurn mirrors globalWaypointTurnMode in
         # template.kml. The aircraft arcs through the transit and approach
         # waypoints on a radius of waypointTurnDampingDist.
-        self.waypointTurnMode = "coordinateTurn"
-        # Seed value. finalizeTurnParams() holds the real per-waypoint radius,
-        # which it takes from the adjacent leg lengths.
+        self.waypointTurnMode = COORDINATE_TURN
+        # Seed value. finalizeTurnParams() sizes the real per-waypoint radius
+        # once every waypoint exists; see src/lib/turn_params.py.
         self.waypointTurnDampingDist = "1.66666666666667"
         # Full stop, carried by the photo waypoint -- the camera fires from a
         # standstill -- and by the two ends of the wayline.
-        self.waypointTurnMode_stop = "toPointAndStopWithDiscontinuityCurvature"
-        self.waypointTurnDampingDist_stop = "0"
-        # The RC sizes a coordinateTurn radius as a third of the shorter adjacent
-        # leg, measured on a sphere of this radius. A mission carries its own
-        # radii, so it is flyable on transfer without a re-save on the RC.
-        self.earth_radius = 6371000.0
-        self.turn_damping_leg_ratio = 3.0
+        self.waypointTurnMode_stop = STOP_TURN
+        self.waypointTurnDampingDist_stop = STOP_DAMPING
 
         # waypointGimbalHeadingParam
         self.waypointGimbalPitchAngle = "0"
@@ -275,69 +270,14 @@ class BuildWaylinesWPML:
 
     # -------------------------------------------------------------------------
     def finalizeTurnParams(self):
-        placemarks = self.folder.findall("kml:Placemark", self.namespaces)
-
-        # The RC compiles the first and last waypoint as a full stop, whatever
-        # the global turn mode says.
-        for placemark in (placemarks[0], placemarks[-1]):
-            self.setTurnParam(
-                placemark, self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
-            )
-
-        # waypointTurnDampingDist is the radius the aircraft arcs on, and it has
-        # to fit inside the legs it blends: the flight controller rejects a route
-        # whose radius exceeds half of an adjacent leg ("waypoint turning
-        # intercept error", 1550). Legs run from centimetres to tens of metres --
-        # the hop from a transit waypoint down to its approach waypoint collapses
-        # whenever a checkpoint sits at the same elevation as its tree -- so each
-        # radius comes from the geometry it sits in, sized the way the RC does.
-        points = [self.placemarkPoint(placemark) for placemark in placemarks]
-        for idx, placemark in enumerate(placemarks):
-            if self.turnMode(placemark) != self.waypointTurnMode:
-                continue
-            legs = [
-                self.legLength(points[i], points[j])
-                for i, j in ((idx - 1, idx), (idx, idx + 1))
-                if i >= 0 and j < len(points)
-            ]
-            damping = min(legs) / self.turn_damping_leg_ratio
-            if damping == 0:
-                # Coincident waypoints leave no room to arc through at all.
-                self.setTurnParam(
-                    placemark, self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
-                )
-            else:
-                self.setTurnParam(placemark, self.waypointTurnMode, f"{damping:.15g}")
-
-    # -------------------------------------------------------------------------
-    def placemarkPoint(self, placemark):
-        coordinates = placemark.find("kml:Point/kml:coordinates", self.namespaces).text
-        lon_x, lat_y = (float(value) for value in coordinates.strip().split(","))
-        height = float(placemark.find("wpml:executeHeight", self.namespaces).text)
-        return (lon_x, lat_y, height)
-
-    # -------------------------------------------------------------------------
-    def legLength(self, start, end):
-        # Equirectangular projection about the mid-latitude, on a sphere of
-        # earth_radius: the measure the RC sizes its turn radii from. At the
-        # tens-of-metres scale of a leg it agrees with a geodesic to the
-        # millimetre.
-        lon_start, lat_start, height_start = start
-        lon_end, lat_end, height_end = end
-        mid_lat = math.radians((lat_start + lat_end) / 2)
-        d_east = math.radians(lon_end - lon_start) * self.earth_radius * math.cos(mid_lat)
-        d_north = math.radians(lat_end - lat_start) * self.earth_radius
-        return math.sqrt(d_east**2 + d_north**2 + (height_end - height_start) ** 2)
-
-    # -------------------------------------------------------------------------
-    def turnMode(self, placemark):
-        return placemark.find("wpml:waypointTurnParam/wpml:waypointTurnMode", self.namespaces).text
-
-    # -------------------------------------------------------------------------
-    def setTurnParam(self, placemark, turn_mode, damping_dist):
-        turn_param = placemark.find("wpml:waypointTurnParam", self.namespaces)
-        turn_param.find("wpml:waypointTurnMode", self.namespaces).text = turn_mode
-        turn_param.find("wpml:waypointTurnDampingDist", self.namespaces).text = damping_dist
+        # Every radius is sized from the legs either side of its waypoint, and
+        # capped so the arc stays within buffer_feature of the tree.
+        finalize_turn_params(
+            self.folder.findall("kml:Placemark", self.namespaces),
+            self.namespaces,
+            "executeHeight",
+            config.buffer_feature,
+        )
 
     # -------------------------------------------------------------------------
     def addTreeFirstLastPlacemark(

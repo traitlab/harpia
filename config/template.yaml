@@ -58,7 +58,9 @@ photo_heading: north
 # Buffer around the flight path between waypoints to find minimal elevation above obstacles for checkpoints
 buffer_path: 10
 
-# Buffer around each feature for calculating its elevation from the DSM
+# Buffer around each feature for calculating its elevation from the DSM.
+# Also the farthest a coordinated turn may stray from a feature: the DSM was
+# sampled within this radius and nowhere else.
 buffer_feature: 3
 
 # Takeoff site coordinates for route optimization
