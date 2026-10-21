@@ -72,8 +72,20 @@ def configured(tmp_path):
     """Point the config singleton at a temp output folder, restore afterwards."""
     from src.lib.config import config
 
-    saved = (config.output_folder, config.output_filename, config.csv_path, config.drone_model)
+    saved = (
+        config.output_folder,
+        config.output_filename,
+        config.csv_path,
+        config.drone_model,
+        config.buffer_feature,
+    )
     config.output_folder = str(tmp_path)
     config.output_filename = "test_out"
     yield config
-    (config.output_folder, config.output_filename, config.csv_path, config.drone_model) = saved
+    (
+        config.output_folder,
+        config.output_filename,
+        config.csv_path,
+        config.drone_model,
+        config.buffer_feature,
+    ) = saved

@@ -9,6 +9,7 @@ Each waypoint expands to 4 placemarks when touch-sky is off:
 firstLast (approach-from), approach, photos, firstLast (depart-to).
 """
 
+import math
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -236,7 +237,11 @@ def test_wpml_m4d_matches_rc_export(configured, csv_path):
 STOP_TURN = "toPointAndStopWithDiscontinuityCurvature"
 
 
-def test_kml_turn_mode_matches_rc_export(configured, csv_path):
+def test_kml_states_every_turn_rather_than_deferring(configured, csv_path):
+    # A waypoint that defers to globalWaypointTurnMode has no radius, and the RC
+    # sizes one itself when it regenerates the wayline -- without the cap that
+    # keeps an arc within buffer_feature of its tree. So every waypoint states
+    # its own turn, as the photo waypoint already did.
     configured.csv_path = csv_path
     b = BuildTemplateKML()
     b.setup()
@@ -245,19 +250,33 @@ def test_kml_turn_mode_matches_rc_export(configured, csv_path):
     assert b.root.find(".//wpml:globalWaypointTurnMode", NS).text == "coordinateTurn"
 
     placemarks = _placemarks(b.folder)
+    last = len(placemarks) - 1
     for i, pm in enumerate(placemarks):
-        turn_param = pm.find("wpml:waypointTurnParam", NS)
-        use_global = pm.find("wpml:useGlobalTurnParam", NS)
-        if i % 4 == 2:
-            # Photo waypoint: overrides the global coordinateTurn so the
-            # aircraft holds still for the whole burst.
-            assert use_global is None
-            assert turn_param.find("wpml:waypointTurnMode", NS).text == STOP_TURN
-            assert turn_param.find("wpml:waypointTurnDampingDist", NS).text == "0"
+        assert pm.find("wpml:useGlobalTurnParam", NS) is None
+        mode, damping = _turn(pm)
+        if i % 4 == 2 or i in (0, last):
+            # The photo waypoint holds still for the whole burst, and the RC
+            # compiles both ends of the wayline as stops.
+            assert (mode, damping) == (STOP_TURN, "0")
         else:
-            # Every other waypoint defers to the global coordinateTurn.
-            assert turn_param is None
-            assert use_global.text == "1"
+            assert mode == "coordinateTurn"
+            assert float(damping) > 0
+
+
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_both_halves_carry_the_same_turns(configured, tmp_path, touch_sky):
+    # The RC regenerates waylines.wpml from template.kml when a mission is
+    # edited, so a radius the two files disagree on is one the aircraft may not
+    # fly.
+    _use_fixture(configured, tmp_path, touch_sky)
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    wpml_turns = [_turn(pm) for pm in _placemarks(wpml.folder)]
+    kml_turns = [_turn(pm) for pm in _placemarks(kml.folder)]
+    assert kml_turns == wpml_turns
 
 
 def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
@@ -285,35 +304,165 @@ def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
     assert modes == expected
 
 
-def test_wpml_turn_damping_fits_the_shortest_adjacent_leg(configured, csv_path):
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_wpml_turn_radius_is_the_leg_rule_capped_at_buffer_feature(configured, tmp_path, touch_sky):
     # A radius wider than half the leg it blends into is rejected in flight with
-    # "waypoint turning intercept error (1550)", so each arced waypoint carries a
-    # radius sized from its own geometry.
-    configured.csv_path = csv_path
-    b = BuildWaylinesWPML()
-    b.setup()
-    b.generate()
+    # "waypoint turning intercept error (1550)", so each radius starts at a third
+    # of the shorter adjacent leg, as the RC sizes it. It is then capped so the
+    # arc reaches no farther than buffer_feature from its waypoint: an arc of
+    # radius r reaches r * h sideways, h the horizontal share of the steeper leg.
+    _use_fixture(configured, tmp_path, touch_sky)
+    try:
+        b = BuildWaylinesWPML()
+        b.setup()
+        b.generate()
+    finally:
+        configured.touch_sky = False
     placemarks = _placemarks(b.folder)
-    points = [b.placemarkPoint(pm) for pm in placemarks]
+    points = [_point(pm, "executeHeight") for pm in placemarks]
 
-    dampings = set()
+    capped = uncapped = 0
     for i, pm in enumerate(placemarks):
-        mode = pm.find("wpml:waypointTurnParam/wpml:waypointTurnMode", NS).text
-        damping = float(pm.find("wpml:waypointTurnParam/wpml:waypointTurnDampingDist", NS).text)
+        mode, damping = _turn(pm)
+        damping = float(damping)
         if mode == STOP_TURN:
             assert damping == 0
             continue
-        legs = [
-            b.legLength(points[j], points[k])
-            for j, k in ((i - 1, i), (i, i + 1))
-            if j >= 0 and k < len(points)
-        ]
-        assert damping == pytest.approx(min(legs) / 3)
-        assert damping < min(legs) / 2
-        dampings.add(damping)
+        legs = [_enu(points[i], points[j]) for j in (i - 1, i + 1)]
+        lengths = [math.dist((0, 0, 0), leg) for leg in legs]
+        reach = max(
+            math.hypot(leg[0], leg[1]) / length for leg, length in zip(legs, lengths, strict=True)
+        )
+        leg_rule = min(lengths) / 3
+        # A corner with no horizontal leg reaches nowhere sideways: uncapped.
+        expected = min(leg_rule, configured.buffer_feature / reach) if reach > 0 else leg_rule
+        assert damping < min(lengths) / 2
+        assert damping == pytest.approx(expected)
+        if damping < leg_rule - 1e-9:
+            capped += 1
+        else:
+            uncapped += 1
 
-    # The radii track the legs they sit in, so they are not all the same value.
-    assert len(dampings) > 1
+    # Both fixtures exercise both: every climb out of a tree is 15 m, whose leg
+    # rule alone would give a 5 m radius, and the rest are under the cap.
+    assert capped >= 1
+    assert uncapped >= 1
+    if touch_sky:
+        # The climb to the apex is vertical on both sides, so it reaches nowhere
+        # sideways and keeps its full leg-rule radius -- above buffer_feature.
+        radii = [float(_turn(pm)[1]) for pm in placemarks]
+        assert max(radii) > configured.buffer_feature
+
+
+@pytest.mark.parametrize("buffer_feature", [2, 3])
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_no_arc_leaves_buffer_feature_or_drops_below_the_photo(
+    configured, tmp_path, touch_sky, buffer_feature
+):
+    # Every waypoint of a tree sits at the tree's own position, so most corners
+    # turn between a vertical leg and a horizontal one: the climb out of a tree,
+    # and the descent into the next. An arc there leaves early, so the aircraft
+    # moves sideways before it has finished climbing, or starts down before it is
+    # over the tree. The ground under it was measured within buffer_feature of
+    # the tree and nowhere else, so no arc may reach beyond that, nor dip below
+    # the photo altitude the plan already flies over it.
+    #
+    # An arc lies inside the triangle its two tangent points make with the
+    # corner, so checking those two points bounds all of it.
+    _use_fixture(configured, tmp_path, touch_sky)
+    configured.buffer_feature = buffer_feature
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    for builder, height_tag in ((wpml, "executeHeight"), (kml, "ellipsoidHeight")):
+        placemarks = _placemarks(builder.folder)
+        points = [_point(pm, height_tag) for pm in placemarks]
+        photo_altitude = {
+            pm.find("kml:Point/kml:coordinates", NS).text: point[2]
+            for pm, point in zip(placemarks, points, strict=True)
+            if _is_photo_waypoint(pm)
+        }
+        arcs = 0
+        for i, pm in enumerate(placemarks):
+            mode, damping = _turn(pm)
+            if mode != "coordinateTurn":
+                continue
+            arcs += 1
+            radius = float(damping)
+            floor = photo_altitude[pm.find("kml:Point/kml:coordinates", NS).text]
+            for j in (i - 1, i + 1):
+                leg = _enu(points[i], points[j])
+                length = math.dist((0, 0, 0), leg)
+                tangent = [c * radius / length for c in leg]
+                assert math.hypot(tangent[0], tangent[1]) <= buffer_feature + 1e-9, (
+                    f"waypoint {i} arcs {math.hypot(tangent[0], tangent[1]):.2f} m "
+                    f"from its tree, beyond buffer_feature={buffer_feature}"
+                )
+                assert points[i][2] + tangent[2] >= floor - 1e-9
+        assert arcs > 0
+
+
+def test_turns_refuse_a_missing_buffer_feature(configured, csv_path):
+    # buffer_feature bounds every turn, so without one there is no safe radius
+    # to write -- refused rather than flown uncapped.
+    configured.csv_path = csv_path
+    configured.buffer_feature = None
+    b = BuildWaylinesWPML()
+    b.setup()
+    with pytest.raises(ValueError, match="buffer_feature"):
+        b.generate()
+
+
+def _turn(pm):
+    turn = pm.find("wpml:waypointTurnParam", NS)
+    return (
+        turn.find("wpml:waypointTurnMode", NS).text,
+        turn.find("wpml:waypointTurnDampingDist", NS).text,
+    )
+
+
+def _point(pm, height_tag):
+    lon, lat = (float(v) for v in pm.find("kml:Point/kml:coordinates", NS).text.split(","))
+    return (lon, lat, float(pm.find(f"wpml:{height_tag}", NS).text))
+
+
+def _enu(origin, point):
+    # Metres east, north and up from `origin`, on a local tangent plane.
+    mid_lat = math.radians((origin[1] + point[1]) / 2)
+    return (
+        math.radians(point[0] - origin[0]) * 6371000.0 * math.cos(mid_lat),
+        math.radians(point[1] - origin[1]) * 6371000.0,
+        point[2] - origin[2],
+    )
+
+
+def _is_photo_waypoint(pm):
+    funcs = {f.text for f in pm.findall(".//wpml:actionActuatorFunc", NS)}
+    return bool(funcs & {"orientedShoot", "takePhoto"})
+
+
+def _use_fixture(configured, tmp_path, touch_sky):
+    if touch_sky:
+        configured.csv_path = write_waypoint_csv(
+            tmp_path / "touch_sky.csv", TOUCH_SKY_WPT_ROWS, TOUCH_SKY_CPT_ROWS
+        )
+        configured.touch_sky = True
+        configured.touch_sky_interval = 5
+        configured.touch_sky_altitude = TOUCH_SKY_ALTITUDE
+    else:
+        configured.csv_path = write_waypoint_csv(tmp_path / "site.csv", WPT_ROWS, CPT_ROWS)
+
+
+def _build_both():
+    wpml = BuildWaylinesWPML()
+    wpml.setup()
+    wpml.generate()
+    kml = BuildTemplateKML()
+    kml.setup()
+    kml.generate()
+    return wpml, kml
 
 
 # 5 waypoints, so the 5th trips a touch_sky_interval of 5 and adds an apex.
