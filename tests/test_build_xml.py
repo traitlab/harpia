@@ -13,9 +13,12 @@ import xml.etree.ElementTree as ET
 
 import pytest
 from conftest import write_waypoint_csv
+from pydantic import ValidationError
 
 from src.lib.build_template_kml import BuildTemplateKML
 from src.lib.build_waylines_wpml import BuildWaylinesWPML
+from src.lib.photo_heading import photo_headings
+from src.model.config import Config
 
 NS = {
     "kml": "http://www.opengis.net/kml/2.2",
@@ -364,6 +367,109 @@ def test_m3e_emits_no_payload_lens_index(configured, csv_path):
         group = _placemarks(builder.folder)[2].find("wpml:actionGroup", NS)
         # No RC export to compare against for the M3E, so nothing is emitted.
         assert group.findall(".//wpml:payloadLensIndex", NS) == []
+
+
+# Cardinal legs, so each expected bearing is exact: t1 -> t2 due east, t2 -> t3
+# due north, t3 -> t4 due west, t4 -> t5 due south.
+HEADING_WPT_ROWS = [
+    (1, -74.000, 46.0000, 100, 1),
+    (2, -73.998, 46.0000, 101, 2),
+    (3, -73.998, 46.0010, 102, 3),
+    (4, -74.000, 46.0010, 103, 4),
+    (5, -74.000, 46.0005, 104, 5),
+]
+HEADING_CPT_ROWS = [
+    (0, -73.999, 46.0000, 105, 0),
+    (0, -73.998, 46.0005, 106, 0),
+    (0, -73.999, 46.0010, 107, 0),
+    (0, -74.000, 46.0008, 108, 0),
+]
+# The first waypoint is reached from the take-off site, so it faces the way out
+# to the second instead: east, the same as t2's inbound leg.
+EXPECTED_ARRIVAL_HEADINGS = ["90", "90", "0", "-90", "180"]
+
+
+def _oriented_shoots(folder, waypoint_index):
+    group = _placemarks(folder)[waypoint_index * 4 + 2].find("wpml:actionGroup", NS)
+    return group.findall("wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS)
+
+
+def _burst_headings(folder, waypoint_count):
+    """Every orientedShoot heading, waypoint by waypoint.
+
+    Each shot of one burst fires on the same heading, so a per-waypoint set of
+    size 1 is part of the contract.
+    """
+    headings = []
+    for i in range(waypoint_count):
+        burst = []
+        for shoot in _oriented_shoots(folder, i):
+            param = shoot.find("wpml:actionActuatorFuncParam", NS)
+            heading = param.find("wpml:aircraftHeading", NS).text
+            # DJI requires gimbalYawRotateAngle to track aircraftHeading.
+            assert param.find("wpml:gimbalYawRotateAngle", NS).text == heading
+            burst.append(heading)
+        assert len(set(burst)) == 1
+        headings.extend(burst)
+    return headings
+
+
+def test_photo_heading_north_is_the_default(configured, csv_path):
+    # The default has to stay byte-identical to the RC export: every burst at 0.
+    assert configured.photo_heading == "north"
+    configured.csv_path = csv_path
+    for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+        builder.setup()
+        builder.generate()
+        assert _burst_headings(builder.folder, len(WPT_ROWS)) == ["0"] * 2 * len(WPT_ROWS)
+
+
+def test_photo_heading_arrival_faces_the_inbound_leg(configured, tmp_path):
+    # arrival spends no rotation on arrival: the burst is shot on the bearing the
+    # aircraft flew in on, so orientedShoot commands a heading it already holds.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "headings.csv", HEADING_WPT_ROWS, HEADING_CPT_ROWS
+    )
+    configured.photo_heading = "arrival"
+    try:
+        for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+            builder.setup()
+            builder.generate()
+            # Two orientedShoot actions per waypoint, both on the same heading.
+            expected = [h for h in EXPECTED_ARRIVAL_HEADINGS for _ in range(2)]
+            assert _burst_headings(builder.folder, len(HEADING_WPT_ROWS)) == expected
+    finally:
+        configured.photo_heading = "north"
+
+
+def test_photo_heading_arrival_leaves_takephoto_alone(configured, tmp_path):
+    # takePhoto has no heading field, so the M4E wide shot carries none either.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "headings_m4e.csv", HEADING_WPT_ROWS, HEADING_CPT_ROWS
+    )
+    configured.photo_heading = "arrival"
+    configured.drone_model = "m4e"
+    try:
+        b = BuildWaylinesWPML()
+        b.setup()
+        b.generate()
+    finally:
+        configured.photo_heading = "north"
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    photo = group.find("wpml:action[wpml:actionActuatorFunc='takePhoto']", NS)
+    param = photo.find("wpml:actionActuatorFuncParam", NS)
+    assert param.find("wpml:aircraftHeading", NS) is None
+    assert param.find("wpml:gimbalYawRotateAngle", NS) is None
+
+
+def test_photo_headings_single_waypoint_faces_north(configured):
+    # A lone waypoint has no leg to take a bearing from.
+    assert photo_headings([("46.0", "-74.0", "100", "1")], "arrival") == ["0"]
+
+
+def test_photo_heading_rejects_unknown_mode():
+    with pytest.raises(ValidationError):
+        Config(photo_heading="sideways")
 
 
 def test_wpml_saved_file_is_wellformed_xml(configured, csv_path, tmp_path):

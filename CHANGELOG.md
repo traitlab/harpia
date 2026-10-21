@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `photo_heading`, choosing the aircraft yaw for each photo burst. The default
+  `north` rotates to true north before shooting, as before, and its output is
+  byte-identical; `arrival` keeps the heading the aircraft flew in with, which
+  saves a rotation at every feature and the battery time it costs. Worth keeping
+  `north` when photos of the same feature are compared through time, since a
+  constant yaw makes the frames line up.
+
+  The rotation was commanded by the `orientedShoot` action itself, which
+  hardcoded `aircraftHeading` to `0` -- not by the waypoint heading mode, which
+  already brought the aircraft in on the leg's own bearing. Each burst heading is
+  the bearing of the leg into that feature, and both `aircraftHeading` and
+  `gimbalYawRotateAngle` carry it, as DJI requires them to agree on these
+  airframes. The first feature is reached from the take-off site, which the
+  waypoints CSV does not record, so it faces the way out to the second instead.
+
 ## [1.3.0] - 2026-09-05
 
 ### Added

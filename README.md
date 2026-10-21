@@ -42,6 +42,11 @@ Periodically ascends to a higher altitude to re-establish signal and transmit up
 - **Purpose**: Fly to higher altitude periodically to restore connection between controller and drone before losing RTK signal
 - **Configurable**: Set interval (every N waypoints) and altitude (up to 200m above DSM)
 
+### 🧭 Photo Heading
+Chooses the aircraft yaw for each photo burst, trading frame consistency against flight time:
+- **`north`** (default): rotate to true north before shooting, so photos of the same feature line up across missions
+- **`arrival`**: keep the heading the drone arrived with, saving a rotation at every feature
+
 ### 🚁 Takeoff Site Coordinates
 Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
 - **Purpose**: Start the mission from a defined first waypoint for improved route planning
@@ -90,6 +95,7 @@ output_filename: my_mission  # Optional
 # Flight settings
 buffer: 6
 approach: 10
+photo_heading: north  # 'north' (default) or 'arrival'
 
 # Waypoint generation settings
 buffer_path: 10 # Optional
@@ -134,6 +140,9 @@ There are two ways to select a single polygon from the AOI file:
 #### 🎯 Waypoint Generation Settings
 - `--takeoff-coords, -t`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
 - `--takeoff-coords-projected`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
+
+#### 📷 Photo Settings
+- `--photo-heading`: Aircraft yaw for each photo burst — `north` (default) rotates to true north, `arrival` keeps the heading flown in with (optional)
 
 #### 🌤️ Touch-Sky Settings
 - `--touch-sky, -s`: Enable touch-sky feature (default: False)

@@ -42,6 +42,13 @@ buffer: 6
 # This is the extra altitude for safety when drone descends to buffer height
 approach: 10
 
+# Aircraft yaw for the photo burst at each feature
+# 'north': rotate to true north before shooting. Keep this when photos of the
+#          same feature are compared through time.
+# 'arrival': keep the heading the drone arrived with, saving one rotation per
+#            feature and the battery time it costs.
+photo_heading: north
+
 # ==============================================================================
 # WAYPOINT GENERATION SETTINGS
 # ==============================================================================

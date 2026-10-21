@@ -7,6 +7,7 @@ from pathlib import Path
 from xml.dom.minidom import parseString
 
 from src.lib.config import config
+from src.lib.photo_heading import photo_headings
 from src.model.config import DRONE_MODEL_CONFIG
 
 
@@ -63,7 +64,6 @@ class BuildWaylinesWPML:
         self.action_actuator_func = "orientedShoot"
         self.gimbal_pitch_rotate_angle = "-90"
         self.gimbal_roll_rotate_angle = "0"
-        self.gimbal_yaw_rotate_angle = "0"
         self.focus_x = "0"
         self.focus_y = "0"
         self.focus_region_width = "0"
@@ -88,7 +88,6 @@ class BuildWaylinesWPML:
         self.gimbalRotateTime = "0"
         self.payloadPositionIndex = "0"
 
-        self.aircraft_heading = "0"
         self.accurate_frame_valid = "0"
         self.payload_position_index = "0"
         self.use_global_payload_lens_index = "0"
@@ -188,6 +187,8 @@ class BuildWaylinesWPML:
         action_group_id = 0
         touch_sky_count = 0
 
+        aircraft_headings = photo_headings(self.wpt_csv_properties, config.photo_heading)
+
         for idx, (lat_y, lon_x, wpt_elevation_from_dsm, point_id) in enumerate(
             self.wpt_csv_properties
         ):
@@ -208,7 +209,14 @@ class BuildWaylinesWPML:
 
             height = str(float(wpt_elevation_from_dsm) + float(config.buffer))
             self.addTreePhotosPlacemark(
-                base_index + 2, lat_y, lon_x, height, point_id, action_group_id + 1, base_index + 2
+                base_index + 2,
+                lat_y,
+                lon_x,
+                height,
+                point_id,
+                action_group_id + 1,
+                base_index + 2,
+                aircraft_headings[idx],
             )
 
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx + 1][2]
@@ -578,7 +586,7 @@ class BuildWaylinesWPML:
 
     # -------------------------------------------------------------------------
     def addPlacemarkActionOrientedShoot(
-        self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath
+        self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath, aircraft_heading
     ):
         action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
         ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
@@ -595,9 +603,11 @@ class BuildWaylinesWPML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}gimbalRollRotateAngle"
         ).text = self.gimbal_roll_rotate_angle
+        # DJI: for the M3E/M3T and M3D/M3TD, gimbalYawRotateAngle has to align
+        # with aircraftHeading, so the burst heading sets both.
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}gimbalYawRotateAngle"
-        ).text = self.gimbal_yaw_rotate_angle
+        ).text = aircraft_heading
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusX"
         ).text = self.focus_x
@@ -615,7 +625,7 @@ class BuildWaylinesWPML:
         ).text = focalLength
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}aircraftHeading"
-        ).text = self.aircraft_heading
+        ).text = aircraft_heading
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}accurateFrameValid"
         ).text = self.accurate_frame_valid
@@ -730,7 +740,15 @@ class BuildWaylinesWPML:
 
     # -------------------------------------------------------------------------
     def addTreePhotosPlacemark(
-        self, idx, lat_y, lon_x, elevation_from_dsm, point_id, actionGroupId, actionGroupIndex
+        self,
+        idx,
+        lat_y,
+        lon_x,
+        elevation_from_dsm,
+        point_id,
+        actionGroupId,
+        actionGroupIndex,
+        aircraft_heading,
     ):
         placemark = ET.Element(f"{{{self.namespaces['kml']}}}Placemark")
 
@@ -779,6 +797,7 @@ class BuildWaylinesWPML:
                     file_suffix,
                     action_config["uuid"],
                     action_config["uuid"],
+                    aircraft_heading,
                 )
             wpml_actionGroup.append(wpml_action)
             action_idx += 1
