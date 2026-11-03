@@ -8,8 +8,7 @@
 <img src="https://img.shields.io/badge/python-3.11-blue" alt="Python 3.11">
 <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT">
 <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey" alt="Platform: Windows | Linux">
-<a href="https://doi.org/10.1101/2025.09.02.673753"><img src="https://img.shields.io/badge/bioRxiv-red.svg" alt="Read the paper"></a>
-<a href="https://doi.org/10.5281/zenodo.21982703"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21982703.svg" alt="DOI"></a>
+<a href="https://doi.org/10.1111/2041-210x.70415"><img src="https://img.shields.io/badge/Methods_in_Ecology_and_Evolution-E8636F.svg" alt="Read the paper"></a>
 </p>
 
 <p align="center">
@@ -276,15 +275,16 @@ See [`config/select_crowns_template.yaml`](config/select_crowns_template.yaml) f
 The resulting layer can be used directly as the `--features` input to `main.py`. Name it to match the features naming convention (for example `bcipearson_polygons.gpkg`), or pass `--output-filename` to `main.py` to bypass that rule.
 
 ## 📚 Citation
-If you use harpia in your research, please cite our paper (bioRxiv preprint):
+If you use harpia in your research, please cite our paper published in *Methods in Ecology and Evolution*:
 
 ```bibtex
-@misc{Lalibert2025harpia,
-    title={Seeing the forest and the trees: a workflow for automatic acquisition of ultra-high resolution drone photos of tropical forest canopies to support botanical and ecological studies},
-    author={Laliberté, Etienne and Caron-Guay, Antoine and Le Falher, Vincent and Tougas, Guillaume and Muller-Landau, Helene C. and Rivas-Torres, Gonzalo and Walla, Thomas R. and Baudchon, Hugo and Hernandez, Mélvin and Buenaño, Adrian and Weber, Anna and Chambers, Jeffrey and Inuma, Jomber and Araúz, Fernando and Valdes, Jorge and Hernández, Andrés and Brassfield, David and Sérgio, Paulo and Vasquez, Vicente and Simonetti, Adriana and Marra, Daniel M. and Vasconcelos, Caroline and Vaca, Jarol F. and Rivadeneyra, Geovanny and Illanes, José and Salagaje-Muela, Luis A. and Gualinga, Jefferson},
-    year={2025},
-    url={https://www.biorxiv.org/content/10.1101/2025.09.02.673753v1},
-    doi={10.1101/2025.09.02.673753},
-    keywords={Unoccupied aerial vehicle (UAV),biodiversity,monitoring,RGB imagery,canopy,remote tree-survey,Panama,Ecuador,Brazil,tropical tree diversity}
+@article{Lalibert2026harpia,
+    title={Seeing both the forest and the trees: An automated workflow for ultra-high-resolution drone imaging of tropical canopies},
+    author={Laliberté, Etienne and Caron-Guay, Antoine and Le Falher, Vincent and Tougas, Guillaume and Muller-Landau, Helene C. and Rivas-Torres, Gonzalo and Walla, Thomas R. and Baudchon, Hugo and Hernandez, Mélvin and Buenaño, Adrian and Weber, Anna and Chambers, Jeffrey Q. and Inuma, Jomber Chota and Araúz, Fernando and Valdes, Jorge and Hernández, Andrés and Brassfield, David and Filho, Paulo Araujo and Vasquez, Vicente and Simonetti, Adriana and Marra, Daniel Magnabosco and de Moura Vasconcelos, Caroline and Vaca, Jarol Fernando and Rivadeneyra, Geovanny and Illanes, José and Salagaje-Muela, Luis A. and Gualinga, Jefferson},
+    journal={Methods in Ecology and Evolution},
+    year={2026},
+    url={https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210x.70415},
+    doi={https://doi.org/10.1111/2041-210x.70415},
+    keywords={biodiversity, Brazil, canopy, Ecuador, monitoring, Panama, RGB imagery, unoccupied aerial vehicle (UAV)}
 }
 ```
