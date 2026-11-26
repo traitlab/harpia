@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-harpia is an open-source Python library to program automatic close-up photo missions to carry out with the DJI Mavic 3E or Matrice 4E drones. It generates an optimized flight path from feature locations (selected tree crowns for example) to acquire the close-up photos, supporting tropical botanical and ecological work.
+harpia is an open-source Python library to program automatic close-up photo missions to carry out with the DJI Mavic 3E, Matrice 4E and Matrice 4D drones. It generates an optimized flight path from feature locations (selected tree crowns for example) to acquire the close-up photos, supporting tropical botanical and ecological work.
 </p>
 
 <p align="center">
@@ -40,6 +40,11 @@ Converts waypoints into DJI-compatible mission files:
 Periodically ascends to a higher altitude to re-establish signal and transmit updated RTK corrections to the drone:
 - **Purpose**: Fly to higher altitude periodically to restore connection between controller and drone before losing RTK signal
 - **Configurable**: Set interval (every N waypoints) and altitude (up to 200m above DSM)
+
+### 🧭 Photo Heading
+Chooses the aircraft yaw for each photo burst, trading frame consistency against flight time:
+- **`north`** (default): rotate to true north before shooting, so photos of the same feature line up across missions
+- **`arrival`**: keep the heading the drone arrived with, saving a rotation at every feature
 
 ### 🚁 Takeoff Site Coordinates
 Optionally specify takeoff coordinates (`--takeoff-coords` or in YAML config). The first waypoint will be automatically selected as the closest one to the provided coordinates, optimizing the initial flight path from the takeoff location.
@@ -69,6 +74,14 @@ conda activate harpia
 pip install -r requirements.txt
 ```
 
+To run the tests and the linter, install the development tools as well:
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+ruff check src tests && ruff format --check src tests
+```
+
 ## ⚙️ Configuration
 
 It is possible to pass a YAML configuration file or to use command-line arguments when running the pipeline.
@@ -82,19 +95,22 @@ Create a configuration file (e.g., `config.yaml`) with your settings. A detailed
 csv_path: /path/to/waypoints.csv # Optional
 features_path: /path/to/features.gpkg # Optional
 dsm_path: /path/to/dsm.tif # Optional
-drone_model: m3e  # 'm3e' and 'm4e' are currently supported
+drone_model: m3e  # 'm3e', 'm4e' and 'm4d' are currently supported
 output_folder: /path/to/output  # Optional
 output_filename: my_mission  # Optional
 
 # Flight settings
 buffer: 6
 approach: 10
+photo_heading: north  # 'north' (default) or 'arrival'
+waypoint_turn: coordinated  # 'coordinated' (default) or 'stop'
 
 # Waypoint generation settings
 buffer_path: 10 # Optional
-buffer_feature: 3 # Optional
+buffer_feature: 3 # Optional (also caps the coordinated turns)
 takeoff_coords: [45.5572, -73.5558]  # Optional (lat lon for WGS84, or x y if projected)
 takeoff_coords_projected: false  # Optional
+tsp_time_limit_seconds: 30  # Optional - time budget for the route optimizer
 
 # Area of Interest (AOI) settings
 aoi_path: /path/to/aoi.gpkg # Optional
@@ -114,15 +130,15 @@ debug_mode: false
 
 #### 📁 Input/Output Settings
 - `--config, -c`: Path to YAML configuration file
-- `--csv, -csv`: Path to existing waypoints CSV file
+- `--csv`: Path to existing waypoints CSV file
 - `--features, -f`: Path to input features file (GeoPackage, Shapefile)
-- `--dsm, -dsm`: Path to DSM raster file
-- `--drone-model, -m`: Model of the drone to carry out the mission ('m3e' or 'm4e')
-- `--output-path, -op`: Output directory path (optional)
-- `--output-filename, -of`: Custom output filename without extension (optional)
+- `--dsm, -d`: Path to DSM raster file
+- `--drone-model, -m`: Model of the drone to carry out the mission ('m3e', 'm4e' or 'm4d')
+- `--output-path, -o`: Output directory path (optional)
+- `--output-filename, -n`: Custom output filename without extension (optional)
 
 #### 🗺️ Area of Interest (AOI) Settings
-- `--aoi, -aoi`: Path to AOI file for filtering features (optional)
+- `--aoi, -a`: Path to AOI file for filtering features (optional)
 - `--aoi-index, -i`: 1-based index of the AOI polygon to use; requires `--aoi-qualifier` (optional)
 - `--aoi-qualifier, -q`: Qualifier appended to output filenames, up to 8 characters (optional)
 
@@ -131,16 +147,22 @@ There are two ways to select a single polygon from the AOI file:
 - **By attribute**: pass `--aoi-qualifier` on its own. The AOI file must then contain a `qualifier` column, and the feature whose value matches is selected.
 
 #### 🎯 Waypoint Generation Settings
-- `--takeoff-coords, -to`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
-- `--takeoff-coords-projected, -proj`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
+- `--takeoff-coords, -t`: Takeoff site coordinates as two floats: x y OR lat lon (optional)
+- `--takeoff-coords-projected`: Flag to indicate takeoff coordinates are in projected CRS (default: False (WGS84)) (optional)
+
+#### 📷 Photo Settings
+- `--photo-heading`: Aircraft yaw for each photo burst — `north` (default) rotates to true north, `arrival` keeps the heading flown in with (optional)
+
+#### ✈️ Flight Settings
+- `--waypoint-turn`: How the drone passes waypoints that take no photo — `coordinated` (default) arcs through the waypoints between features but still stops above each feature before descending, `stop` comes to a full stop at every waypoint as before 1.3.0 (optional)
 
 #### 🌤️ Touch-Sky Settings
-- `--touch-sky, -ts`: Enable touch-sky feature (default: False)
-- `--touch-sky-interval, -n`: Number of features between touch-sky actions (default: 10, min: 5)
-- `--touch-sky-altitude, -alt`: Touch-sky altitude in meters above DSM (default: 100, min: 16, max: 200)
+- `--touch-sky, -s`: Enable touch-sky feature (default: False)
+- `--touch-sky-interval`: Number of features between touch-sky actions (default: 10, min: 5)
+- `--touch-sky-altitude`: Touch-sky altitude in meters above DSM (default: 100, min: 16, max: 200)
 
 #### 🔧 System Settings
-- `--debug, -d`: Run in debug mode
+- `--debug, -v`: Run in debug mode
 
 ## 🚀 Usage Examples
 

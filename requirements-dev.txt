@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==9.2.0
+# Keep in step with .pre-commit-config.yaml and the lint job in .github/workflows/ci.yml.
+ruff==0.15.14

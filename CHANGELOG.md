@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-26
+
+### Added
+
+- Support for the Matrice 4D (`drone_model: m4d`), with its own mission
+  template under `templates/m4d-onewpt-wpmz/`. It flies the same three-shot
+  sequence as the M4E and differs only in its drone (`100`), payload (`98`)
+  and oriented-camera (`98`) enum values, plus a `payloadLensIndex` that its
+  remote controller writes into `template.kml` as well as `waylines.wpml`.
+- `waypoint_turn` (`--waypoint-turn`), choosing how the aircraft passes the
+  waypoints between trees. The default `coordinated` arcs through them (see
+  Changed); `stop` keeps the full stop at every waypoint from 1.2.0, for when
+  the aircraft must fly exactly the straight legs between waypoints. `stop`
+  sizes no turn radius, so it needs no `buffer_feature`.
+- `photo_heading`, choosing the aircraft yaw for each photo burst. The default
+  `north` rotates to true north before shooting, as before, and its output is
+  byte-identical; `arrival` keeps the heading the aircraft flew in with, which
+  saves a rotation at every feature and the battery time it costs. Worth keeping
+  `north` when photos of the same feature are compared through time, since a
+  constant yaw makes the frames line up.
+
+  The rotation was commanded by the `orientedShoot` action itself, which
+  hardcoded `aircraftHeading` to `0` -- not by the waypoint heading mode, which
+  already brought the aircraft in on the leg's own bearing. Each burst heading is
+  the bearing of the leg into that feature, and both `aircraftHeading` and
+  `gimbalYawRotateAngle` carry it, as DJI requires them to agree on these
+  airframes. The first feature is reached from the take-off site, which the
+  waypoints CSV does not record, so it faces the way out to the second instead.
+
+### Changed
+
+- **Breaking.** Command-line short options now follow the POSIX convention of a
+  single character after a single dash. The multi-character aliases (`-csv`,
+  `-dsm`, `-op`, `-of`, `-aoi`, `-to`, `-proj`, `-ts`, `-alt`) are gone; every
+  option keeps its `--long` form, which is what the documented examples use.
+
+  | Option | Was | Now |
+  | --- | --- | --- |
+  | `--csv` | `-csv` | *(long form only)* |
+  | `--dsm` | `-dsm` | `-d` |
+  | `--output-path` | `-op` | `-o` |
+  | `--output-filename` | `-of` | `-n` |
+  | `--aoi` | `-aoi` | `-a` |
+  | `--takeoff-coords` | `-to` | `-t` |
+  | `--takeoff-coords-projected` | `-proj` | *(long form only)* |
+  | `--touch-sky` | `-ts` | `-s` |
+  | `--touch-sky-interval` | `-n` | *(long form only)* |
+  | `--touch-sky-altitude` | `-alt` | *(long form only)* |
+  | `--debug` | `-d` | `-v` |
+
+  Note that `-d` changed hands: it used to mean `--debug` and now means `--dsm`.
+  A stale `-d` errors with "expected one argument" rather than misbehaving.
+
+- The global waypoint turn mode (`wpml:globalWaypointTurnMode`) is now
+  `coordinateTurn`. The aircraft arcs through the transit waypoints between
+  trees instead of stopping at each one, cutting the stop-and-go. Three kinds
+  of waypoint keep a full stop (`toPointAndStopWithDiscontinuityCurvature`):
+  the approach waypoint, so the descent to the photo waypoint starts at the
+  3 m/s approach speed rather than at transit speed; the photo waypoint, so the
+  camera fires from a standstill; and the two ends of the wayline. All three
+  templates changed. `waypoint_turn: stop` restores the 1.2.0 behaviour.
+
+- `wpml:waypointTurnDampingDist`, the arc radius, is now computed per waypoint
+  in `src/lib/turn_params.py` instead of being a single hardcoded value. The
+  smaller of two limits wins:
+  - A third of the shorter adjacent leg, as the remote controller computes when
+    a mission is opened and re-saved. A radius wider than half the leg it
+    blends into is rejected in flight with "Waypoint turning intercept error
+    (1550)", and the legs here vary from centimetres to tens of metres.
+  - `buffer_feature / h`, where `h` is the horizontal share of the steeper
+    adjacent leg, so no arc reaches farther than `buffer_feature` from its
+    tree: below transit altitude, that is the only DSM area sampled around the
+    tree. Vertical corners are unaffected.
+
+  `template.kml` states every waypoint's turn and radius rather than deferring
+  to `globalWaypointTurnMode`: for a deferred waypoint the remote controller
+  sizes a radius itself when it regenerates the wayline, without the cap. A
+  missing `buffer_feature` is refused rather than flown with uncapped turns.
+
+- The touch-sky apex keeps the full stop. Its two legs double back on each
+  other, so it is the one corner an arc would round off entirely, levelling the
+  aircraft out short of the altitude the climb exists to reach.
+
+### Fixed
+
+- M4E: the 1x photo of each waypoint is now taken with a `takePhoto` action in
+  wide mode instead of `orientedShoot`, which always fires the zoom camera.
+  Zoom photos get no DJI Time Sync, so their RTK position was wrong. The tele
+  and med shots still use `orientedShoot`; the M3E is unchanged.
+- M4E: the `takePhoto` action now matches the remote controller's own export
+  byte for byte -- `fileSuffix` first, `payloadLensIndex` (`visable`) last and
+  only in `waylines.wpml`, and a centred `focus` action emitted just before it.
+- M4E: `orientedShoot` actions in `waylines.wpml` now carry the
+  `payloadLensIndex` (`visable`) the remote controller writes; it was missing.
+- Transit waypoints in `waylines.wpml` were hardcoded to 15 m/s, contradicting
+  the M4E and M4D templates, which declare 21 m/s. The speed now comes from the
+  template's own `wpml:autoFlightSpeed`. The approach waypoint keeps its 3 m/s.
+
 ## [1.2.0] - 2026-08-26
 
 ### Added
@@ -103,7 +201,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mission package (template KML + waylines WPML). Includes the touch-sky
   feature, optional takeoff-site coordinates, and AOI filtering.
 
-[Unreleased]: https://github.com/traitlab/harpia/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/traitlab/harpia/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/traitlab/harpia/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/traitlab/harpia/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/traitlab/harpia/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/traitlab/harpia/compare/v1.0.1...v1.1.0

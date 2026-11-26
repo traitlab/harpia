@@ -20,7 +20,7 @@ features_path: null # e.g., 'path/to/features.gpkg'
 dsm_path: null # e.g., 'path/to/dsm.tif'
 
 # Model of the drone to carry out the mission
-drone_model: m3e # 'm3e' and 'm4e' are currently supported
+drone_model: m3e # 'm3e', 'm4e' and 'm4d' are currently supported
 
 # Output configuration
 # Custom output directory path. If not set, default is input file (either CSV or features) directory.
@@ -42,6 +42,22 @@ buffer: 6
 # This is the extra altitude for safety when drone descends to buffer height
 approach: 10
 
+# Aircraft yaw for the photo burst at each feature
+# 'north': rotate to true north before shooting. Keep this when photos of the
+#          same feature are compared through time.
+# 'arrival': keep the heading the drone arrived with, saving one rotation per
+#            feature and the battery time it costs.
+photo_heading: north
+
+# How the drone passes through the waypoints that take no photo
+# 'coordinated' (default): arc through the waypoints between features without
+#          stopping. The drone still stops above each feature before
+#          descending, and for each photo burst. Faster missions.
+# 'stop': come to a full stop at every waypoint, as before harpia 1.3.0.
+#         Slower, but the drone flies exactly the straight lines between
+#         waypoints. Use it in tight or uncertain terrain.
+waypoint_turn: coordinated
+
 # ==============================================================================
 # WAYPOINT GENERATION SETTINGS
 # ==============================================================================
@@ -51,7 +67,9 @@ approach: 10
 # Buffer around the flight path between waypoints to find minimal elevation above obstacles for checkpoints
 buffer_path: 10
 
-# Buffer around each feature for calculating its elevation from the DSM
+# Buffer around each feature for calculating its elevation from the DSM.
+# Also the farthest a coordinated turn may stray from a feature: below transit
+# altitude, this is the only DSM area sampled around the feature.
 buffer_feature: 3
 
 # Takeoff site coordinates for route optimization
@@ -63,6 +81,10 @@ takeoff_coords: null # e.g., [45.55729, -73.55588] or [612709, 5045875]
 # false (default): coordinates are in WGS84 and will be transformed to DSM CRS
 # true: coordinates are already in the same projected CRS as the DSM
 takeoff_coords_projected: false
+
+# Time budget (seconds) for the route optimizer (TSP solver) that orders the features.
+# Larger surveys may need more than the default to find a good route.
+tsp_time_limit_seconds: 30
 
 # ==============================================================================
 # AREA OF INTEREST (AOI) SETTINGS

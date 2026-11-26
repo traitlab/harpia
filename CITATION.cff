@@ -31,5 +31,69 @@ authors:
     orcid: 'https://orcid.org/0009-0004-1010-4855'
 repository-code: 'https://github.com/traitlab/harpia'
 license: MIT
-version: 1.2.0
-date-released: '2026-08-26'
+version: 1.3.0
+date-released: '2026-09-05'
+preferred-citation:
+  type: article
+  title: >-
+    Seeing both the forest and the trees: An automated workflow for
+    ultra-high-resolution drone imaging of tropical canopies
+  journal: Methods in Ecology and Evolution
+  year: 2026
+  doi: 10.1111/2041-210x.70415
+  url: 'https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/2041-210x.70415'
+  authors:
+    - family-names: Laliberté
+      given-names: Etienne
+    - family-names: Caron-Guay
+      given-names: Antoine
+    - family-names: Le Falher
+      given-names: Vincent
+    - family-names: Tougas
+      given-names: Guillaume
+    - family-names: Muller-Landau
+      given-names: Helene C.
+    - family-names: Rivas-Torres
+      given-names: Gonzalo
+    - family-names: Walla
+      given-names: Thomas R.
+    - family-names: Baudchon
+      given-names: Hugo
+    - family-names: Hernandez
+      given-names: Mélvin
+    - family-names: Buenaño
+      given-names: Adrian
+    - family-names: Weber
+      given-names: Anna
+    - family-names: Chambers
+      given-names: Jeffrey Q.
+    - family-names: Inuma
+      given-names: Jomber Chota
+    - family-names: Araúz
+      given-names: Fernando
+    - family-names: Valdes
+      given-names: Jorge
+    - family-names: Hernández
+      given-names: Andrés
+    - family-names: Brassfield
+      given-names: David
+    - family-names: Filho
+      given-names: Paulo Araujo
+    - family-names: Vasquez
+      given-names: Vicente
+    - family-names: Simonetti
+      given-names: Adriana
+    - family-names: Marra
+      given-names: Daniel Magnabosco
+    - family-names: de Moura Vasconcelos
+      given-names: Caroline
+    - family-names: Vaca
+      given-names: Jarol Fernando
+    - family-names: Rivadeneyra
+      given-names: Geovanny
+    - family-names: Illanes
+      given-names: José
+    - family-names: Salagaje-Muela
+      given-names: Luis A.
+    - family-names: Gualinga
+      given-names: Jefferson

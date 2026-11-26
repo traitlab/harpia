@@ -6,6 +6,8 @@ from pathlib import Path
 from xml.dom.minidom import parseString
 
 from src.lib.config import config
+from src.lib.photo_heading import photo_headings
+from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.model.config import DRONE_MODEL_CONFIG
 
 
@@ -16,11 +18,23 @@ class BuildWaylinesWPML:
         self.wpt_csv_properties = None
         self.cpt_csv_properties = None
 
-        self.waypointSpeed = "15"
+        # Set by setup() from the template's autoFlightSpeed.
+        self.waypointSpeed = None
+        # A waypoint's parameters govern the leg leaving it, so this speed is the
+        # final descent onto the tree, not the leg down to the approach waypoint.
         self.waypointSpeed_approach = "3"
-        # waypointTurnParam
-        self.waypointTurnMode = "toPointAndStopWithDiscontinuityCurvature"
-        self.waypointTurnDampingDist = "0"
+        # waypointTurnParam: coordinateTurn mirrors globalWaypointTurnMode in
+        # template.kml. The aircraft arcs through the transit waypoints on a
+        # radius of waypointTurnDampingDist.
+        self.waypointTurnMode = COORDINATE_TURN
+        # Seed value. finalizeTurnParams() sizes the real per-waypoint radius
+        # once every waypoint exists; see src/lib/turn_params.py.
+        self.waypointTurnDampingDist = "1.66666666666667"
+        # Full stop, carried by the approach waypoint -- the descent starts at
+        # approach speed -- by the photo waypoint -- the camera fires from a
+        # standstill -- and by the two ends of the wayline.
+        self.waypointTurnMode_stop = STOP_TURN
+        self.waypointTurnDampingDist_stop = STOP_DAMPING
 
         # waypointGimbalHeadingParam
         self.waypointGimbalPitchAngle = "0"
@@ -30,6 +44,8 @@ class BuildWaylinesWPML:
 
         # Variables for common values
         self.use_straight_line = "1"
+        # The RC exports useStraightLine=0 on the approach waypoint only.
+        self.use_straight_line_approach = "0"
 
         self.waypoint_heading_mode = "followWayline"
         self.waypoint_heading_angle = "0"
@@ -44,11 +60,19 @@ class BuildWaylinesWPML:
         self.action_actuator_func = "orientedShoot"
         self.gimbal_pitch_rotate_angle = "-90"
         self.gimbal_roll_rotate_angle = "0"
-        self.gimbal_yaw_rotate_angle = "0"
         self.focus_x = "0"
         self.focus_y = "0"
         self.focus_region_width = "0"
         self.focus_region_height = "0"
+
+        # Standalone focus action the RC emits just before takePhoto (waylines only).
+        self.focus_action_x = "0.25"
+        self.focus_action_y = "0.25"
+        self.focus_action_region_width = "0.5"
+        self.focus_action_region_height = "0.5"
+        self.is_point_focus = "0"
+        self.is_infinite_focus = "0"
+        self.is_calibration_focus = "0"
 
         self.gimbalRotateMode = "absoluteAngle"
         self.gimbalPitchRotateEnable = "1"
@@ -60,10 +84,10 @@ class BuildWaylinesWPML:
         self.gimbalRotateTime = "0"
         self.payloadPositionIndex = "0"
 
-        self.aircraft_heading = "0"
         self.accurate_frame_valid = "0"
         self.payload_position_index = "0"
         self.use_global_payload_lens_index = "0"
+        self.payload_lens_index = DRONE_MODEL_CONFIG[config.drone_model]["wpml_payload_lens_index"]
         self.target_angle = "0"
         self.image_width = "0"
         self.image_height = "0"
@@ -139,6 +163,10 @@ class BuildWaylinesWPML:
 
         # Find the Folder element
         self.folder = self.root.find(".//kml:Folder", self.namespaces)
+
+        # A wayline has no useGlobalSpeed: every placemark states its own.
+        self.waypointSpeed = self.folder.find("wpml:autoFlightSpeed", self.namespaces).text
+
         # Remove all existing Placemark elements with Point
         for placemark in self.folder.findall("kml:Placemark", self.namespaces):
             self.folder.remove(placemark)
@@ -154,6 +182,8 @@ class BuildWaylinesWPML:
         base_index = 0
         action_group_id = 0
         touch_sky_count = 0
+
+        aircraft_headings = photo_headings(self.wpt_csv_properties, config.photo_heading)
 
         for idx, (lat_y, lon_x, wpt_elevation_from_dsm, point_id) in enumerate(
             self.wpt_csv_properties
@@ -175,7 +205,14 @@ class BuildWaylinesWPML:
 
             height = str(float(wpt_elevation_from_dsm) + float(config.buffer))
             self.addTreePhotosPlacemark(
-                base_index + 2, lat_y, lon_x, height, point_id, action_group_id + 1, base_index + 2
+                base_index + 2,
+                lat_y,
+                lon_x,
+                height,
+                point_id,
+                action_group_id + 1,
+                base_index + 2,
+                aircraft_headings[idx],
             )
 
             cpt_elevation_from_dsm = self.cpt_csv_properties[idx + 1][2]
@@ -229,6 +266,20 @@ class BuildWaylinesWPML:
             else:
                 base_index += 4  # Normal increment by 4
                 action_group_id += 3  # Normal increment by 3
+
+        self.finalizeTurnParams()
+
+    # -------------------------------------------------------------------------
+    def finalizeTurnParams(self):
+        # Every radius is sized from the legs either side of its waypoint, and
+        # capped so the arc stays within buffer_feature of the tree.
+        finalize_turn_params(
+            self.folder.findall("kml:Placemark", self.namespaces),
+            self.namespaces,
+            "executeHeight",
+            config.buffer_feature,
+            config.waypoint_turn,
+        )
 
     # -------------------------------------------------------------------------
     def addTreeFirstLastPlacemark(
@@ -321,18 +372,18 @@ class BuildWaylinesWPML:
         return wpml_waypointHeadingParam
 
     # -------------------------------------------------------------------------
-    def addWaypointTurnParam(self):
+    def addWaypointTurnParam(self, turn_mode=None, damping_dist=None):
         wpml_waypointTurnParam = ET.Element(f"{{{self.namespaces['wpml']}}}waypointTurnParam")
 
         wpml_waypointTurnMode = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnMode"
         )
-        wpml_waypointTurnMode.text = self.waypointTurnMode
+        wpml_waypointTurnMode.text = turn_mode or self.waypointTurnMode
 
         wpml_waypointTurnDampingDist = ET.SubElement(
             wpml_waypointTurnParam, f"{{{self.namespaces['wpml']}}}waypointTurnDampingDist"
         )
-        wpml_waypointTurnDampingDist.text = self.waypointTurnDampingDist
+        wpml_waypointTurnDampingDist.text = damping_dist or self.waypointTurnDampingDist
 
         return wpml_waypointTurnParam
 
@@ -377,13 +428,23 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        # Full stop, so the descent to the photo waypoint starts at the 3 m/s
+        # approach speed rather than at transit speed.
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
         )
-        wpml_use_straight_line.text = self.use_straight_line
+        # The RC only exports useStraightLine=0 here alongside coordinated turns;
+        # the stop-at-every-waypoint missions carried 1 like every other waypoint.
+        wpml_use_straight_line.text = (
+            self.use_straight_line
+            if config.waypoint_turn == "stop"
+            else self.use_straight_line_approach
+        )
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)
@@ -466,8 +527,18 @@ class BuildWaylinesWPML:
         return action
 
     # -------------------------------------------------------------------------
+    def addPayloadLensIndex(self, action_actuator_func_param):
+        # The RC writes payloadLensIndex only for some payloads and files; see
+        # DRONE_MODEL_CONFIG. Where it writes none, we write none either.
+        if self.payload_lens_index is None:
+            return
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadLensIndex"
+        ).text = self.payload_lens_index
+
+    # -------------------------------------------------------------------------
     def addPlacemarkActionOrientedShoot(
-        self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath
+        self, idx, focalLength, orientedFileSuffix, actionUUID, orientedFilePath, aircraft_heading
     ):
         action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
         ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
@@ -484,9 +555,11 @@ class BuildWaylinesWPML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}gimbalRollRotateAngle"
         ).text = self.gimbal_roll_rotate_angle
+        # DJI: for the M3E/M3T and M3D/M3TD, gimbalYawRotateAngle has to align
+        # with aircraftHeading, so the burst heading sets both.
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}gimbalYawRotateAngle"
-        ).text = self.gimbal_yaw_rotate_angle
+        ).text = aircraft_heading
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusX"
         ).text = self.focus_x
@@ -504,7 +577,7 @@ class BuildWaylinesWPML:
         ).text = focalLength
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}aircraftHeading"
-        ).text = self.aircraft_heading
+        ).text = aircraft_heading
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}accurateFrameValid"
         ).text = self.accurate_frame_valid
@@ -514,6 +587,7 @@ class BuildWaylinesWPML:
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
         ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
         ET.SubElement(
             action_actuator_func_param, f"{{{self.namespaces['wpml']}}}targetAngle"
         ).text = self.target_angle
@@ -555,8 +629,78 @@ class BuildWaylinesWPML:
         return action
 
     # -------------------------------------------------------------------------
+    def addPlacemarkActionTakePhoto(self, idx, fileSuffix):
+        # Child order mirrors what the remote controller emits, as captured in
+        # templates/<model>-onewpt-wpmz/waylines.wpml.
+        action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionActuatorFunc").text = "takePhoto"
+
+        action_actuator_func_param = ET.SubElement(
+            action, f"{{{self.namespaces['wpml']}}}actionActuatorFuncParam"
+        )
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}fileSuffix"
+        ).text = fileSuffix
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadPositionIndex"
+        ).text = self.payload_position_index
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}useGlobalPayloadLensIndex"
+        ).text = self.use_global_payload_lens_index
+        self.addPayloadLensIndex(action_actuator_func_param)
+
+        return action
+
+    # -------------------------------------------------------------------------
+    def addPlacemarkActionFocus(self, idx):
+        # The remote controller precedes every takePhoto with a centred half-frame
+        # focus action; see templates/<model>-onewpt-wpmz/waylines.wpml.
+        action = ET.Element(f"{{{self.namespaces['wpml']}}}action")
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionId").text = idx
+        ET.SubElement(action, f"{{{self.namespaces['wpml']}}}actionActuatorFunc").text = "focus"
+
+        action_actuator_func_param = ET.SubElement(
+            action, f"{{{self.namespaces['wpml']}}}actionActuatorFuncParam"
+        )
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusX"
+        ).text = self.focus_action_x
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusY"
+        ).text = self.focus_action_y
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusRegionWidth"
+        ).text = self.focus_action_region_width
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}focusRegionHeight"
+        ).text = self.focus_action_region_height
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isPointFocus"
+        ).text = self.is_point_focus
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isInfiniteFocus"
+        ).text = self.is_infinite_focus
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}payloadPositionIndex"
+        ).text = self.payload_position_index
+        ET.SubElement(
+            action_actuator_func_param, f"{{{self.namespaces['wpml']}}}isCalibrationFocus"
+        ).text = self.is_calibration_focus
+
+        return action
+
+    # -------------------------------------------------------------------------
     def addTreePhotosPlacemark(
-        self, idx, lat_y, lon_x, elevation_from_dsm, point_id, actionGroupId, actionGroupIndex
+        self,
+        idx,
+        lat_y,
+        lon_x,
+        elevation_from_dsm,
+        point_id,
+        actionGroupId,
+        actionGroupIndex,
+        aircraft_heading,
     ):
         placemark = ET.Element(f"{{{self.namespaces['kml']}}}Placemark")
 
@@ -576,7 +720,9 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_useStraightLine = ET.SubElement(
@@ -589,15 +735,24 @@ class BuildWaylinesWPML:
 
         # Add photo actions based on drone model configuration
         photo_actions = DRONE_MODEL_CONFIG[config.drone_model]["photo_actions"]
-        for idx, action_config in enumerate(photo_actions):
-            wpml_action = self.addPlacemarkActionOrientedShoot(
-                str(idx),
-                action_config["focal_length"],
-                str(point_id) + action_config["suffix"],
-                action_config["uuid"],
-                action_config["uuid"],
-            )
+        action_idx = 0
+        for action_config in photo_actions:
+            file_suffix = str(point_id) + action_config["suffix"]
+            if action_config.get("actuator_func") == "takePhoto":
+                wpml_actionGroup.append(self.addPlacemarkActionFocus(str(action_idx)))
+                action_idx += 1
+                wpml_action = self.addPlacemarkActionTakePhoto(str(action_idx), file_suffix)
+            else:
+                wpml_action = self.addPlacemarkActionOrientedShoot(
+                    str(action_idx),
+                    action_config["focal_length"],
+                    file_suffix,
+                    action_config["uuid"],
+                    action_config["uuid"],
+                    aircraft_heading,
+                )
             wpml_actionGroup.append(wpml_action)
+            action_idx += 1
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)
@@ -642,7 +797,13 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        # The apex sits directly above the waypoint below it, so its two legs
+        # double back on each other. A coordinateTurn there is a reversal: the
+        # aircraft rounds the corner off and levels out short of the altitude
+        # the climb exists to reach. It is a point that has to be flown to.
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(

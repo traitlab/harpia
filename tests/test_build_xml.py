@@ -9,13 +9,17 @@ Each waypoint expands to 4 placemarks when touch-sky is off:
 firstLast (approach-from), approach, photos, firstLast (depart-to).
 """
 
+import math
 import xml.etree.ElementTree as ET
 
 import pytest
 from conftest import write_waypoint_csv
+from pydantic import ValidationError
 
 from src.lib.build_template_kml import BuildTemplateKML
 from src.lib.build_waylines_wpml import BuildWaylinesWPML
+from src.lib.photo_heading import photo_headings
+from src.model.config import Config
 
 NS = {
     "kml": "http://www.opengis.net/kml/2.2",
@@ -64,11 +68,26 @@ def test_wpml_required_dji_elements_present(configured, csv_path):
     assert first.find("wpml:executeHeight", NS) is not None
     assert first.find("wpml:waypointSpeed", NS) is not None
     assert first.find("wpml:actionGroup", NS) is not None
-    # waypointSpeed reflects the configured global speed (15) for fly-through pts.
+    # waypointSpeed reflects the wayline's autoFlightSpeed for fly-through pts.
     assert first.find("wpml:waypointSpeed", NS).text == b.waypointSpeed
     # indices run 0..N-1 contiguously across all placemarks.
     indices = [int(p.find("wpml:index", NS).text) for p in placemarks]
     assert indices == list(range(len(placemarks)))
+
+
+@pytest.mark.parametrize(("model", "speed"), [("m3e", "15"), ("m4e", "21"), ("m4d", "21")])
+def test_wpml_transit_speed_matches_wayline_speed(configured, csv_path, model, speed):
+    configured.csv_path = csv_path
+    configured.drone_model = model
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    # Transit waypoints fly at the wayline speed, which differs by model.
+    assert b.folder.find("wpml:autoFlightSpeed", NS).text == speed
+    speeds = [p.find("wpml:waypointSpeed", NS).text for p in _placemarks(b.folder)]
+    assert set(speeds) == {speed, b.waypointSpeed_approach}
+    # Only the approach waypoint, index 1 of each group of 4, slows down.
+    assert speeds[1::4] == [b.waypointSpeed_approach] * len(WPT_ROWS)
 
 
 def test_wpml_coordinates_passthrough(configured, csv_path):
@@ -100,6 +119,10 @@ def test_kml_placemark_count_and_photo_actions(configured, csv_path):
     assert len(shoots) == 2
 
 
+def _local_tags(param):
+    return [child.tag.split("}")[-1] for child in param]
+
+
 def test_kml_m4e_has_three_photo_actions(configured, csv_path):
     configured.csv_path = csv_path
     configured.drone_model = "m4e"
@@ -107,10 +130,533 @@ def test_kml_m4e_has_three_photo_actions(configured, csv_path):
     b.setup()
     b.generate()
     photos_pm = _placemarks(b.folder)[2]
-    shoots = photos_pm.findall(
-        "wpml:actionGroup/wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS
+    group = photos_pm.find("wpml:actionGroup", NS)
+    # m4e: tele + med via orientedShoot, wide via takePhoto (needed for RTK).
+    shoots = group.findall("wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS)
+    assert len(shoots) == 2
+    photos = group.findall("wpml:action[wpml:actionActuatorFunc='takePhoto']", NS)
+    assert len(photos) == 1
+    param = photos[0].find("wpml:actionActuatorFuncParam", NS)
+    # Element set and order as emitted by the RC: template.kml carries no lens index.
+    assert _local_tags(param) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+    ]
+    assert param.find("wpml:fileSuffix", NS).text.endswith("wide")
+    # The M4E RC leaves the lens index out of template.kml entirely.
+    shoot = shoots[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:payloadLensIndex", NS) is None
+    # template.kml has no focus action; that one is waylines-only.
+    assert group.findall("wpml:action[wpml:actionActuatorFunc='focus']", NS) == []
+
+
+def test_wpml_m4e_takephoto_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4e"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    actions = group.findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    # The RC precedes takePhoto with a centred focus action.
+    assert funcs == ["orientedShoot", "orientedShoot", "focus", "takePhoto"]
+    # actionIds run 0..N-1 contiguously, focus included.
+    assert [a.find("wpml:actionId", NS).text for a in actions] == ["0", "1", "2", "3"]
+
+    param = actions[3].find("wpml:actionActuatorFuncParam", NS)
+    assert _local_tags(param) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+        "payloadLensIndex",
+    ]
+    assert param.find("wpml:fileSuffix", NS).text.endswith("wide")
+    # "visable" is DJI's own spelling, as emitted by the RC.
+    assert param.find("wpml:payloadLensIndex", NS).text == "visable"
+
+    # The M4E RC does write the lens index on orientedShoot in waylines.wpml.
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+
+    focus = actions[2].find("wpml:actionActuatorFuncParam", NS)
+    assert focus.find("wpml:focusX", NS).text == "0.25"
+    assert focus.find("wpml:focusRegionWidth", NS).text == "0.5"
+
+
+def test_kml_m4d_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4d"
+    b = BuildTemplateKML()
+    b.setup()
+    b.generate()
+    # Mission header comes straight from templates/m4d-onewpt-wpmz/template.kml.
+    assert b.root.find(".//wpml:droneEnumValue", NS).text == "100"
+    assert b.root.find(".//wpml:payloadEnumValue", NS).text == "98"
+
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    actions = group.findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    # Same three-shot sequence as the M4E; no focus action in template.kml.
+    assert funcs == ["orientedShoot", "orientedShoot", "takePhoto"]
+
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:orientedCameraType", NS).text == "98"
+    # Unlike the M4E, the M4D RC writes the lens index into template.kml too.
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+    photo = actions[2].find("wpml:actionActuatorFuncParam", NS)
+    assert _local_tags(photo) == [
+        "fileSuffix",
+        "payloadPositionIndex",
+        "useGlobalPayloadLensIndex",
+        "payloadLensIndex",
+    ]
+
+
+def test_wpml_m4d_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m4d"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    assert b.root.find(".//wpml:droneEnumValue", NS).text == "100"
+    assert b.root.find(".//wpml:payloadEnumValue", NS).text == "98"
+
+    actions = _placemarks(b.folder)[2].find("wpml:actionGroup", NS).findall("wpml:action", NS)
+    funcs = [a.find("wpml:actionActuatorFunc", NS).text for a in actions]
+    assert funcs == ["orientedShoot", "orientedShoot", "focus", "takePhoto"]
+
+    shoot = actions[0].find("wpml:actionActuatorFuncParam", NS)
+    assert shoot.find("wpml:orientedCameraType", NS).text == "98"
+    assert shoot.find("wpml:payloadLensIndex", NS).text == "visable"
+    photo = actions[3].find("wpml:actionActuatorFuncParam", NS)
+    assert photo.find("wpml:payloadLensIndex", NS).text == "visable"
+
+
+STOP_TURN = "toPointAndStopWithDiscontinuityCurvature"
+
+
+def test_kml_states_every_turn_rather_than_deferring(configured, csv_path):
+    # A waypoint that defers to globalWaypointTurnMode has no radius, and the RC
+    # sizes one itself when it regenerates the wayline -- without the cap that
+    # keeps an arc within buffer_feature of its tree. So every waypoint states
+    # its own turn, as the photo waypoint already did.
+    configured.csv_path = csv_path
+    b = BuildTemplateKML()
+    b.setup()
+    b.generate()
+    # The Folder-level turn mode is carried over from template.kml unchanged.
+    assert b.root.find(".//wpml:globalWaypointTurnMode", NS).text == "coordinateTurn"
+
+    placemarks = _placemarks(b.folder)
+    last = len(placemarks) - 1
+    for i, pm in enumerate(placemarks):
+        assert pm.find("wpml:useGlobalTurnParam", NS) is None
+        mode, damping = _turn(pm)
+        if i % 4 in (1, 2) or i in (0, last):
+            # The approach waypoint stops so the descent starts at approach speed, the
+            # photo waypoint holds still for the whole burst, and the RC
+            # compiles both ends of the wayline as stops.
+            assert (mode, damping) == (STOP_TURN, "0")
+        else:
+            assert mode == "coordinateTurn"
+            assert float(damping) > 0
+
+
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_both_halves_carry_the_same_turns(configured, tmp_path, touch_sky):
+    # The RC regenerates waylines.wpml from template.kml when a mission is
+    # edited, so a radius the two files disagree on is one the aircraft may not
+    # fly.
+    _use_fixture(configured, tmp_path, touch_sky)
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    wpml_turns = [_turn(pm) for pm in _placemarks(wpml.folder)]
+    kml_turns = [_turn(pm) for pm in _placemarks(kml.folder)]
+    assert kml_turns == wpml_turns
+
+
+def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
+    configured.csv_path = csv_path
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+    placemarks = _placemarks(b.folder)
+    last = len(placemarks) - 1
+
+    modes = []
+    for i, pm in enumerate(placemarks):
+        mode = pm.find("wpml:waypointTurnParam/wpml:waypointTurnMode", NS).text
+        modes.append(mode)
+        # Only the approach waypoint is exported with useStraightLine=0.
+        assert pm.find("wpml:useStraightLine", NS).text == ("0" if i % 4 == 1 else "1")
+
+    # Approach waypoints stop so the descent starts at approach speed,
+    # photo waypoints stop so the camera fires from a standstill, and so do the
+    # two ends of the wayline, whatever the global turn mode says. Everything
+    # else is arced through.
+    expected = [
+        STOP_TURN if (i % 4 in (1, 2) or i in (0, last)) else "coordinateTurn"
+        for i in range(len(placemarks))
+    ]
+    assert modes == expected
+
+
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_wpml_turn_radius_is_the_leg_rule_capped_at_buffer_feature(configured, tmp_path, touch_sky):
+    # A radius wider than half the leg it blends into is rejected in flight with
+    # "waypoint turning intercept error (1550)", so each radius starts at a third
+    # of the shorter adjacent leg, as the RC sizes it. It is then capped so the
+    # arc reaches no farther than buffer_feature from its waypoint: an arc of
+    # radius r reaches r * h sideways, h the horizontal share of the steeper leg.
+    _use_fixture(configured, tmp_path, touch_sky)
+    try:
+        b = BuildWaylinesWPML()
+        b.setup()
+        b.generate()
+    finally:
+        configured.touch_sky = False
+    placemarks = _placemarks(b.folder)
+    points = [_point(pm, "executeHeight") for pm in placemarks]
+
+    capped = uncapped = 0
+    for i, pm in enumerate(placemarks):
+        mode, damping = _turn(pm)
+        damping = float(damping)
+        if mode == STOP_TURN:
+            assert damping == 0
+            continue
+        legs = [_enu(points[i], points[j]) for j in (i - 1, i + 1)]
+        lengths = [math.dist((0, 0, 0), leg) for leg in legs]
+        reach = max(
+            math.hypot(leg[0], leg[1]) / length for leg, length in zip(legs, lengths, strict=True)
+        )
+        leg_rule = min(lengths) / 3
+        # A corner with no horizontal leg reaches nowhere sideways: uncapped.
+        expected = min(leg_rule, configured.buffer_feature / reach) if reach > 0 else leg_rule
+        assert damping < min(lengths) / 2
+        assert damping == pytest.approx(expected)
+        if damping < leg_rule - 1e-9:
+            capped += 1
+        else:
+            uncapped += 1
+
+    # Both fixtures exercise both: every climb out of a tree is 15 m, whose leg
+    # rule alone would give a 5 m radius, and the rest are under the cap.
+    assert capped >= 1
+    assert uncapped >= 1
+    if touch_sky:
+        # The climb to the apex is vertical on both sides, so it reaches nowhere
+        # sideways and keeps its full leg-rule radius -- above buffer_feature.
+        radii = [float(_turn(pm)[1]) for pm in placemarks]
+        assert max(radii) > configured.buffer_feature
+
+
+@pytest.mark.parametrize("buffer_feature", [2, 3])
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_no_arc_leaves_buffer_feature_or_drops_below_the_photo(
+    configured, tmp_path, touch_sky, buffer_feature
+):
+    # Every waypoint of a tree sits at the tree's own position, so most corners
+    # turn between a vertical leg and a horizontal one: the climb out of a tree,
+    # and the descent into the next. An arc there leaves early, so the aircraft
+    # moves sideways before it has finished climbing, or starts down before it is
+    # over the tree. Below transit altitude, the ground under it was measured
+    # only within buffer_feature of the tree, so no arc may reach beyond that,
+    # nor dip below the photo altitude the plan already flies over it.
+    #
+    # An arc lies inside the triangle its two tangent points make with the
+    # corner, so checking those two points bounds all of it.
+    _use_fixture(configured, tmp_path, touch_sky)
+    configured.buffer_feature = buffer_feature
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    for builder, height_tag in ((wpml, "executeHeight"), (kml, "ellipsoidHeight")):
+        placemarks = _placemarks(builder.folder)
+        points = [_point(pm, height_tag) for pm in placemarks]
+        photo_altitude = {
+            pm.find("kml:Point/kml:coordinates", NS).text: point[2]
+            for pm, point in zip(placemarks, points, strict=True)
+            if _is_photo_waypoint(pm)
+        }
+        arcs = 0
+        for i, pm in enumerate(placemarks):
+            mode, damping = _turn(pm)
+            if mode != "coordinateTurn":
+                continue
+            arcs += 1
+            radius = float(damping)
+            floor = photo_altitude[pm.find("kml:Point/kml:coordinates", NS).text]
+            for j in (i - 1, i + 1):
+                leg = _enu(points[i], points[j])
+                length = math.dist((0, 0, 0), leg)
+                tangent = [c * radius / length for c in leg]
+                assert math.hypot(tangent[0], tangent[1]) <= buffer_feature + 1e-9, (
+                    f"waypoint {i} arcs {math.hypot(tangent[0], tangent[1]):.2f} m "
+                    f"from its tree, beyond buffer_feature={buffer_feature}"
+                )
+                assert points[i][2] + tangent[2] >= floor - 1e-9
+        assert arcs > 0
+
+
+def test_turns_refuse_a_missing_buffer_feature(configured, csv_path):
+    # buffer_feature bounds every turn, so without one there is no safe radius
+    # to write -- refused rather than flown uncapped.
+    configured.csv_path = csv_path
+    configured.buffer_feature = None
+    b = BuildWaylinesWPML()
+    b.setup()
+    with pytest.raises(ValueError, match="buffer_feature"):
+        b.generate()
+
+
+def test_waypoint_turn_coordinated_is_the_default():
+    assert Config().waypoint_turn == "coordinated"
+
+
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_waypoint_turn_stop_halts_at_every_waypoint(configured, tmp_path, touch_sky):
+    # The pre-1.3.0 behaviour: a full stop everywhere, in both files, and the
+    # approach waypoint back on useStraightLine=1 like the others.
+    _use_fixture(configured, tmp_path, touch_sky)
+    configured.waypoint_turn = "stop"
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    for builder in (wpml, kml):
+        assert {_turn(pm) for pm in _placemarks(builder.folder)} == {(STOP_TURN, "0")}
+    assert kml.root.find(".//wpml:globalWaypointTurnMode", NS).text == STOP_TURN
+    assert {pm.find("wpml:useStraightLine", NS).text for pm in _placemarks(wpml.folder)} == {"1"}
+
+
+def test_waypoint_turn_stop_needs_no_buffer_feature(configured, csv_path):
+    # No radius is sized, so there is nothing for buffer_feature to cap.
+    configured.csv_path = csv_path
+    configured.buffer_feature = None
+    configured.waypoint_turn = "stop"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+
+
+def test_waypoint_turn_rejects_unknown_mode():
+    with pytest.raises(ValidationError):
+        Config(waypoint_turn="hover")
+
+
+def _turn(pm):
+    turn = pm.find("wpml:waypointTurnParam", NS)
+    return (
+        turn.find("wpml:waypointTurnMode", NS).text,
+        turn.find("wpml:waypointTurnDampingDist", NS).text,
     )
-    assert len(shoots) == 3  # m4e: tele + med + wide
+
+
+def _point(pm, height_tag):
+    lon, lat = (float(v) for v in pm.find("kml:Point/kml:coordinates", NS).text.split(","))
+    return (lon, lat, float(pm.find(f"wpml:{height_tag}", NS).text))
+
+
+def _enu(origin, point):
+    # Metres east, north and up from `origin`, on a local tangent plane.
+    mid_lat = math.radians((origin[1] + point[1]) / 2)
+    return (
+        math.radians(point[0] - origin[0]) * 6371000.0 * math.cos(mid_lat),
+        math.radians(point[1] - origin[1]) * 6371000.0,
+        point[2] - origin[2],
+    )
+
+
+def _is_photo_waypoint(pm):
+    funcs = {f.text for f in pm.findall(".//wpml:actionActuatorFunc", NS)}
+    return bool(funcs & {"orientedShoot", "takePhoto"})
+
+
+def _use_fixture(configured, tmp_path, touch_sky):
+    if touch_sky:
+        configured.csv_path = write_waypoint_csv(
+            tmp_path / "touch_sky.csv", TOUCH_SKY_WPT_ROWS, TOUCH_SKY_CPT_ROWS
+        )
+        configured.touch_sky = True
+        configured.touch_sky_interval = 5
+        configured.touch_sky_altitude = TOUCH_SKY_ALTITUDE
+    else:
+        configured.csv_path = write_waypoint_csv(tmp_path / "site.csv", WPT_ROWS, CPT_ROWS)
+
+
+def _build_both():
+    wpml = BuildWaylinesWPML()
+    wpml.setup()
+    wpml.generate()
+    kml = BuildTemplateKML()
+    kml.setup()
+    kml.generate()
+    return wpml, kml
+
+
+# 5 waypoints, so the 5th trips a touch_sky_interval of 5 and adds an apex.
+TOUCH_SKY_WPT_ROWS = [
+    (i + 1, -74.000 - i * 0.002, 46.0 + i * 0.001, 100 + i, i + 1) for i in range(5)
+]
+TOUCH_SKY_CPT_ROWS = [(0, -74.001 - i * 0.002, 46.0005 + i * 0.001, 105 + i, 0) for i in range(4)]
+TOUCH_SKY_ALTITUDE = 100
+
+
+def test_touch_sky_apex_is_a_full_stop(configured, tmp_path):
+    # The apex sits directly above the waypoint below it, so its two legs double
+    # back on each other. Arcing a reversal rounds the corner off and levels the
+    # aircraft out below the altitude the climb exists to reach.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "touch_sky.csv", TOUCH_SKY_WPT_ROWS, TOUCH_SKY_CPT_ROWS
+    )
+    configured.touch_sky = True
+    configured.touch_sky_interval = 5
+    configured.touch_sky_altitude = TOUCH_SKY_ALTITUDE
+    try:
+        wpml = BuildWaylinesWPML()
+        wpml.setup()
+        wpml.generate()
+        kml = BuildTemplateKML()
+        kml.setup()
+        kml.generate()
+    finally:
+        configured.touch_sky = False
+
+    placemarks = _placemarks(wpml.folder)
+    heights = [float(pm.find("wpml:executeHeight", NS).text) for pm in placemarks]
+    apex = heights.index(max(heights))
+    # The apex is the one waypoint flown to touch_sky_altitude above its checkpoint.
+    assert max(heights) == pytest.approx(TOUCH_SKY_CPT_ROWS[-1][3] + TOUCH_SKY_ALTITUDE)
+
+    turn = placemarks[apex].find("wpml:waypointTurnParam", NS)
+    assert turn.find("wpml:waypointTurnMode", NS).text == STOP_TURN
+    assert turn.find("wpml:waypointTurnDampingDist", NS).text == "0"
+
+    kml_turn = _placemarks(kml.folder)[apex].find("wpml:waypointTurnParam", NS)
+    assert kml_turn.find("wpml:waypointTurnMode", NS).text == STOP_TURN
+
+
+def test_m3e_emits_no_payload_lens_index(configured, csv_path):
+    configured.csv_path = csv_path
+    configured.drone_model = "m3e"
+    for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+        builder.setup()
+        builder.generate()
+        group = _placemarks(builder.folder)[2].find("wpml:actionGroup", NS)
+        # No RC export to compare against for the M3E, so nothing is emitted.
+        assert group.findall(".//wpml:payloadLensIndex", NS) == []
+
+
+# Cardinal legs, so each expected bearing is exact: t1 -> t2 due east, t2 -> t3
+# due north, t3 -> t4 due west, t4 -> t5 due south.
+HEADING_WPT_ROWS = [
+    (1, -74.000, 46.0000, 100, 1),
+    (2, -73.998, 46.0000, 101, 2),
+    (3, -73.998, 46.0010, 102, 3),
+    (4, -74.000, 46.0010, 103, 4),
+    (5, -74.000, 46.0005, 104, 5),
+]
+HEADING_CPT_ROWS = [
+    (0, -73.999, 46.0000, 105, 0),
+    (0, -73.998, 46.0005, 106, 0),
+    (0, -73.999, 46.0010, 107, 0),
+    (0, -74.000, 46.0008, 108, 0),
+]
+# The first waypoint is reached from the take-off site, so it faces the way out
+# to the second instead: east, the same as t2's inbound leg.
+EXPECTED_ARRIVAL_HEADINGS = ["90", "90", "0", "-90", "180"]
+
+
+def _oriented_shoots(folder, waypoint_index):
+    group = _placemarks(folder)[waypoint_index * 4 + 2].find("wpml:actionGroup", NS)
+    return group.findall("wpml:action[wpml:actionActuatorFunc='orientedShoot']", NS)
+
+
+def _burst_headings(folder, waypoint_count):
+    """Every orientedShoot heading, waypoint by waypoint.
+
+    Each shot of one burst fires on the same heading, so a per-waypoint set of
+    size 1 is part of the contract.
+    """
+    headings = []
+    for i in range(waypoint_count):
+        burst = []
+        for shoot in _oriented_shoots(folder, i):
+            param = shoot.find("wpml:actionActuatorFuncParam", NS)
+            heading = param.find("wpml:aircraftHeading", NS).text
+            # DJI requires gimbalYawRotateAngle to track aircraftHeading.
+            assert param.find("wpml:gimbalYawRotateAngle", NS).text == heading
+            burst.append(heading)
+        assert len(set(burst)) == 1
+        headings.extend(burst)
+    return headings
+
+
+def test_photo_heading_north_is_the_default(configured, csv_path):
+    # The default has to stay byte-identical to the RC export: every burst at 0.
+    assert configured.photo_heading == "north"
+    configured.csv_path = csv_path
+    for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+        builder.setup()
+        builder.generate()
+        assert _burst_headings(builder.folder, len(WPT_ROWS)) == ["0"] * 2 * len(WPT_ROWS)
+
+
+def test_photo_heading_arrival_faces_the_inbound_leg(configured, tmp_path):
+    # arrival spends no rotation on arrival: the burst is shot on the bearing the
+    # aircraft flew in on, so orientedShoot commands a heading it already holds.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "headings.csv", HEADING_WPT_ROWS, HEADING_CPT_ROWS
+    )
+    configured.photo_heading = "arrival"
+    try:
+        for builder in (BuildTemplateKML(), BuildWaylinesWPML()):
+            builder.setup()
+            builder.generate()
+            # Two orientedShoot actions per waypoint, both on the same heading.
+            expected = [h for h in EXPECTED_ARRIVAL_HEADINGS for _ in range(2)]
+            assert _burst_headings(builder.folder, len(HEADING_WPT_ROWS)) == expected
+    finally:
+        configured.photo_heading = "north"
+
+
+def test_photo_heading_arrival_leaves_takephoto_alone(configured, tmp_path):
+    # takePhoto has no heading field, so the M4E wide shot carries none either.
+    configured.csv_path = write_waypoint_csv(
+        tmp_path / "headings_m4e.csv", HEADING_WPT_ROWS, HEADING_CPT_ROWS
+    )
+    configured.photo_heading = "arrival"
+    configured.drone_model = "m4e"
+    try:
+        b = BuildWaylinesWPML()
+        b.setup()
+        b.generate()
+    finally:
+        configured.photo_heading = "north"
+    group = _placemarks(b.folder)[2].find("wpml:actionGroup", NS)
+    photo = group.find("wpml:action[wpml:actionActuatorFunc='takePhoto']", NS)
+    param = photo.find("wpml:actionActuatorFuncParam", NS)
+    assert param.find("wpml:aircraftHeading", NS) is None
+    assert param.find("wpml:gimbalYawRotateAngle", NS) is None
+
+
+def test_photo_headings_single_waypoint_faces_north(configured):
+    # A lone waypoint has no leg to take a bearing from.
+    assert photo_headings([("46.0", "-74.0", "100", "1")], "arrival") == ["0"]
+
+
+def test_photo_heading_rejects_unknown_mode():
+    with pytest.raises(ValidationError):
+        Config(photo_heading="sideways")
 
 
 def test_wpml_saved_file_is_wellformed_xml(configured, csv_path, tmp_path):
