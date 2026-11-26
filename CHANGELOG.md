@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-26
+
 ### Added
 
+- Support for the Matrice 4D (`drone_model: m4d`), with its own mission
+  template under `templates/m4d-onewpt-wpmz/`. It flies the same three-shot
+  sequence as the M4E and differs only in its drone (`100`), payload (`98`)
+  and oriented-camera (`98`) enum values, plus a `payloadLensIndex` that its
+  remote controller writes into `template.kml` as well as `waylines.wpml`.
 - `waypoint_turn` (`--waypoint-turn`), choosing how the aircraft passes the
-  waypoints that take no photo. The default `coordinated` keeps the 1.3.0
-  coordinated turns; `stop` brings back the full stop at every waypoint from
-  before 1.3.0, for when the aircraft must fly exactly the straight legs
-  between waypoints. `stop` sizes no turn radius, so it needs no
-  `buffer_feature`.
+  waypoints between trees. The default `coordinated` arcs through them (see
+  Changed); `stop` keeps the full stop at every waypoint from 1.2.0, for when
+  the aircraft must fly exactly the straight legs between waypoints. `stop`
+  sizes no turn radius, so it needs no `buffer_feature`.
 - `photo_heading`, choosing the aircraft yaw for each photo burst. The default
   `north` rotates to true north before shooting, as before, and its output is
   byte-identical; `arrival` keeps the heading the aircraft flew in with, which
@@ -29,42 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gimbalYawRotateAngle` carry it, as DJI requires them to agree on these
   airframes. The first feature is reached from the take-off site, which the
   waypoints CSV does not record, so it faces the way out to the second instead.
-
-### Changed
-
-- The approach waypoint is a full stop again in `coordinated` mode. Arcing
-  through it carried transit speed into the descent onto the tree; stopping
-  there makes the descent to the photo waypoint start at the 3 m/s approach
-  speed.
-
-### Fixed
-
-- A coordinated turn no longer reaches farther than `buffer_feature` from its
-  tree. Every waypoint of a tree sits at the tree's own position, so the climb
-  out of a tree and the descent into the next turn between a vertical leg and a
-  horizontal one; a radius of a third of the shorter leg came off the climb or
-  descent and was then flown sideways. A 15 m climb gave a 5 m radius, so the
-  aircraft left the climb 5 m below the altitude it was climbing to, already
-  heading for the next tree beyond the DSM area sampled around the tree. Each
-  radius is now also capped at `buffer_feature / h`, where `h` is the
-  horizontal share of the steeper adjacent leg: vertical corners are
-  unaffected, and every waypoint still arcs.
-- `template.kml` states every waypoint's turn and radius instead of deferring
-  the non-photo waypoints to `globalWaypointTurnMode`. A deferred waypoint
-  carries no radius, and the remote controller sizes one itself when it
-  regenerates the wayline -- without the cap. Both files take their radii from
-  `src/lib/turn_params.py`.
-- A missing `buffer_feature` is refused rather than flown with uncapped turns.
-
-## [1.3.0] - 2026-09-05
-
-### Added
-
-- Support for the Matrice 4D (`drone_model: m4d`), with its own mission
-  template under `templates/m4d-onewpt-wpmz/`. It flies the same three-shot
-  sequence as the M4E and differs only in its drone (`100`), payload (`98`)
-  and oriented-camera (`98`) enum values, plus a `payloadLensIndex` that its
-  remote controller writes into `template.kml` as well as `waylines.wpml`.
 
 ### Changed
 
@@ -91,22 +61,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A stale `-d` errors with "expected one argument" rather than misbehaving.
 
 - The global waypoint turn mode (`wpml:globalWaypointTurnMode`) is now
-  `coordinateTurn`. The aircraft arcs through the transit and approach
-  waypoints instead of stopping at each one, cutting the stop-and-go between
-  trees. Two kinds of waypoint still override it with a full stop
-  (`toPointAndStopWithDiscontinuityCurvature`): the photo waypoint, so the
-  camera fires from a standstill, and the two ends of the wayline. All three
-  templates changed.
+  `coordinateTurn`. The aircraft arcs through the transit waypoints between
+  trees instead of stopping at each one, cutting the stop-and-go. Three kinds
+  of waypoint keep a full stop (`toPointAndStopWithDiscontinuityCurvature`):
+  the approach waypoint, so the descent to the photo waypoint starts at the
+  3 m/s approach speed rather than at transit speed; the photo waypoint, so the
+  camera fires from a standstill; and the two ends of the wayline. All three
+  templates changed. `waypoint_turn: stop` restores the 1.2.0 behaviour.
 
-- `wpml:waypointTurnDampingDist` is now computed per waypoint instead of being
-  a single hardcoded radius. An arc radius wider than half the leg it blends
-  into is rejected in flight with "Waypoint turning intercept error (1550)",
-  and the legs here vary from centimetres to tens of metres: the hop from a
-  transit waypoint down to its approach waypoint collapses whenever a
-  checkpoint sits at the same elevation as its tree. Each radius is now a third
-  of the shorter adjacent leg, reproducing what the remote controller computes
-  when a mission is opened and re-saved, so a mission flies straight off the
-  transfer.
+- `wpml:waypointTurnDampingDist`, the arc radius, is now computed per waypoint
+  in `src/lib/turn_params.py` instead of being a single hardcoded value. The
+  smaller of two limits wins:
+  - A third of the shorter adjacent leg, as the remote controller computes when
+    a mission is opened and re-saved. A radius wider than half the leg it
+    blends into is rejected in flight with "Waypoint turning intercept error
+    (1550)", and the legs here vary from centimetres to tens of metres.
+  - `buffer_feature / h`, where `h` is the horizontal share of the steeper
+    adjacent leg, so no arc reaches farther than `buffer_feature` from its
+    tree: below transit altitude, that is the only DSM area sampled around the
+    tree. Vertical corners are unaffected.
+
+  `template.kml` states every waypoint's turn and radius rather than deferring
+  to `globalWaypointTurnMode`: for a deferred waypoint the remote controller
+  sizes a radius itself when it regenerates the wayline, without the cap. A
+  missing `buffer_feature` is refused rather than flown with uncapped turns.
 
 - The touch-sky apex keeps the full stop. Its two legs double back on each
   other, so it is the one corner an arc would round off entirely, levelling the
