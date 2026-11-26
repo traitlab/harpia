@@ -40,7 +40,7 @@ jobs:
       - name: Install
         run: |
           uv venv --python ${{ matrix.python-version }} .venv
-          uv pip install -r requirements.txt pytest
+          uv pip install -r requirements-dev.txt
       - name: Test
         run: |
           source .venv/bin/activate
