@@ -49,6 +49,15 @@ approach: 10
 #            feature and the battery time it costs.
 photo_heading: north
 
+# How the drone passes through the waypoints that take no photo
+# 'coordinated' (default): arc through the waypoints between features without
+#          stopping. The drone still stops above each feature before
+#          descending, and for each photo burst. Faster missions.
+# 'stop': come to a full stop at every waypoint, as before harpia 1.3.0.
+#         Slower, but the drone flies exactly the straight lines between
+#         waypoints. Use it in tight or uncertain terrain.
+waypoint_turn: coordinated
+
 # ==============================================================================
 # WAYPOINT GENERATION SETTINGS
 # ==============================================================================

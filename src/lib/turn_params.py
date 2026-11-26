@@ -19,11 +19,16 @@ LEG_RATIO = 3.0
 
 
 # -----------------------------------------------------------------------------
-def finalize_turn_params(placemarks, namespaces, height_tag, horizontal_cap_m):
+def finalize_turn_params(
+    placemarks, namespaces, height_tag, horizontal_cap_m, waypoint_turn="coordinated"
+):
     """Size the radius of every coordinateTurn waypoint, in place.
 
     The first and last waypoints become full stops: the RC compiles them that
     way whatever the global turn mode says. Every other stop is left alone.
+
+    With `waypoint_turn` set to "stop", every waypoint becomes a full stop
+    instead and no radius is sized, so `horizontal_cap_m` is not needed.
 
     `height_tag` is the element holding each waypoint's altitude --
     `executeHeight` in waylines.wpml, `ellipsoidHeight` in template.kml. The two
@@ -31,6 +36,11 @@ def finalize_turn_params(placemarks, namespaces, height_tag, horizontal_cap_m):
 
     `horizontal_cap_m` is `buffer_feature`: see `turn_radius`.
     """
+    if waypoint_turn == "stop":
+        for placemark in placemarks:
+            set_turn_param(placemark, namespaces, STOP_TURN, STOP_DAMPING)
+        return
+
     if horizontal_cap_m is None or horizontal_cap_m <= 0:
         raise ValueError(
             "buffer_feature must be a positive number of metres: it is also the "

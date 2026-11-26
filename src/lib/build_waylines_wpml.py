@@ -24,13 +24,14 @@ class BuildWaylinesWPML:
         # final descent onto the tree, not the leg down to the approach waypoint.
         self.waypointSpeed_approach = "3"
         # waypointTurnParam: coordinateTurn mirrors globalWaypointTurnMode in
-        # template.kml. The aircraft arcs through the transit and approach
-        # waypoints on a radius of waypointTurnDampingDist.
+        # template.kml. The aircraft arcs through the transit waypoints on a
+        # radius of waypointTurnDampingDist.
         self.waypointTurnMode = COORDINATE_TURN
         # Seed value. finalizeTurnParams() sizes the real per-waypoint radius
         # once every waypoint exists; see src/lib/turn_params.py.
         self.waypointTurnDampingDist = "1.66666666666667"
-        # Full stop, carried by the photo waypoint -- the camera fires from a
+        # Full stop, carried by the approach waypoint -- the descent starts at
+        # approach speed -- by the photo waypoint -- the camera fires from a
         # standstill -- and by the two ends of the wayline.
         self.waypointTurnMode_stop = STOP_TURN
         self.waypointTurnDampingDist_stop = STOP_DAMPING
@@ -277,6 +278,7 @@ class BuildWaylinesWPML:
             self.namespaces,
             "executeHeight",
             config.buffer_feature,
+            config.waypoint_turn,
         )
 
     # -------------------------------------------------------------------------
@@ -426,13 +428,23 @@ class BuildWaylinesWPML:
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
 
-        wpml_waypointTurnParam = self.addWaypointTurnParam()
+        # Full stop, so the descent to the photo waypoint starts at the 3 m/s
+        # approach speed rather than at transit speed.
+        wpml_waypointTurnParam = self.addWaypointTurnParam(
+            self.waypointTurnMode_stop, self.waypointTurnDampingDist_stop
+        )
         placemark.append(wpml_waypointTurnParam)
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
         )
-        wpml_use_straight_line.text = self.use_straight_line_approach
+        # The RC only exports useStraightLine=0 here alongside coordinated turns;
+        # the stop-at-every-waypoint missions carried 1 like every other waypoint.
+        wpml_use_straight_line.text = (
+            self.use_straight_line
+            if config.waypoint_turn == "stop"
+            else self.use_straight_line_approach
+        )
 
         wpml_waypointGimbalHeadingParam = self.addWaypointGimbalHeadingParam()
         placemark.append(wpml_waypointGimbalHeadingParam)

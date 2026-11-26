@@ -78,6 +78,7 @@ def configured(tmp_path):
         config.csv_path,
         config.drone_model,
         config.buffer_feature,
+        config.waypoint_turn,
     )
     config.output_folder = str(tmp_path)
     config.output_filename = "test_out"
@@ -88,4 +89,5 @@ def configured(tmp_path):
         config.csv_path,
         config.drone_model,
         config.buffer_feature,
+        config.waypoint_turn,
     ) = saved

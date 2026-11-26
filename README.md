@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-harpia is an open-source Python library to program automatic close-up photo missions to carry out with the DJI Mavic 3E or Matrice 4E drones. It generates an optimized flight path from feature locations (selected tree crowns for example) to acquire the close-up photos, supporting tropical botanical and ecological work.
+harpia is an open-source Python library to program automatic close-up photo missions to carry out with the DJI Mavic 3E, Matrice 4E and Matrice 4D drones. It generates an optimized flight path from feature locations (selected tree crowns for example) to acquire the close-up photos, supporting tropical botanical and ecological work.
 </p>
 
 <p align="center">
@@ -75,6 +75,14 @@ conda activate harpia
 pip install -r requirements.txt
 ```
 
+To run the tests and the linter, install the development tools as well:
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+ruff check src tests && ruff format --check src tests
+```
+
 ## ⚙️ Configuration
 
 It is possible to pass a YAML configuration file or to use command-line arguments when running the pipeline.
@@ -96,6 +104,7 @@ output_filename: my_mission  # Optional
 buffer: 6
 approach: 10
 photo_heading: north  # 'north' (default) or 'arrival'
+waypoint_turn: coordinated  # 'coordinated' (default) or 'stop'
 
 # Waypoint generation settings
 buffer_path: 10 # Optional
@@ -143,6 +152,9 @@ There are two ways to select a single polygon from the AOI file:
 
 #### 📷 Photo Settings
 - `--photo-heading`: Aircraft yaw for each photo burst — `north` (default) rotates to true north, `arrival` keeps the heading flown in with (optional)
+
+#### ✈️ Flight Settings
+- `--waypoint-turn`: How the drone passes waypoints that take no photo — `coordinated` (default) arcs through the waypoints between features but still stops above each feature before descending, `stop` comes to a full stop at every waypoint as before 1.3.0 (optional)
 
 #### 🌤️ Touch-Sky Settings
 - `--touch-sky, -s`: Enable touch-sky feature (default: False)

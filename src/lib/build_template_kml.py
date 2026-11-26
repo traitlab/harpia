@@ -33,7 +33,8 @@ class BuildTemplateKML:
         self.waypointTurnMode = COORDINATE_TURN
         # Seed value. finalizeTurnParams() sizes the real per-waypoint radius.
         self.waypointTurnDampingDist = "1.66666666666667"
-        # Full stop: the photo waypoint, where the aircraft holds still for the
+        # Full stop: the approach waypoint, so the descent starts at approach
+        # speed, the photo waypoint, where the aircraft holds still for the
         # whole burst, and the two ends of the wayline.
         self.waypointTurnMode_stop = STOP_TURN
         self.waypointTurnDampingDist_stop = STOP_DAMPING
@@ -375,9 +376,9 @@ class BuildTemplateKML:
         )
         wpml_use_global_heading_param.text = self.use_global_heading_param
 
-        placemark.append(
-            self.addWaypointTurnParam(self.waypointTurnMode, self.waypointTurnDampingDist)
-        )
+        # Full stop, so the descent to the photo waypoint starts at the 3 m/s
+        # approach speed rather than at transit speed.
+        placemark.append(self.addWaypointTurnParamStop())
 
         wpml_use_straight_line = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useStraightLine"
@@ -420,7 +421,12 @@ class BuildTemplateKML:
             self.namespaces,
             "ellipsoidHeight",
             config.buffer_feature,
+            config.waypoint_turn,
         )
+        if config.waypoint_turn == "stop":
+            # Keep the Folder-level default in line with the waypoints, so a
+            # waypoint added on the RC stops too.
+            self.root.find(".//wpml:globalWaypointTurnMode", self.namespaces).text = STOP_TURN
 
     # -------------------------------------------------------------------------
     def addPlacemarkActionGroup(self, action_group_id, action_group_index):

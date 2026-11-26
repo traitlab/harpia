@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `waypoint_turn` (`--waypoint-turn`), choosing how the aircraft passes the
+  waypoints that take no photo. The default `coordinated` keeps the 1.3.0
+  coordinated turns; `stop` brings back the full stop at every waypoint from
+  before 1.3.0, for when the aircraft must fly exactly the straight legs
+  between waypoints. `stop` sizes no turn radius, so it needs no
+  `buffer_feature`.
 - `photo_heading`, choosing the aircraft yaw for each photo burst. The default
   `north` rotates to true north before shooting, as before, and its output is
   byte-identical; `arrival` keeps the heading the aircraft flew in with, which
@@ -23,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gimbalYawRotateAngle` carry it, as DJI requires them to agree on these
   airframes. The first feature is reached from the take-off site, which the
   waypoints CSV does not record, so it faces the way out to the second instead.
+
+### Changed
+
+- The approach waypoint is a full stop again in `coordinated` mode. Arcing
+  through it carried transit speed into the descent onto the tree; stopping
+  there makes the descent to the photo waypoint start at the 3 m/s approach
+  speed.
 
 ### Fixed
 

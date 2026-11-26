@@ -70,6 +70,16 @@ DRONE_MODEL_CONFIG = {
 #        which saves a rotation at every waypoint. See src/lib/photo_heading.py.
 PHOTO_HEADING_MODES = ("north", "arrival")
 
+# How the aircraft passes through waypoints that take no photo.
+#
+# coordinated: arc through the transit waypoints between trees on a
+#              coordinateTurn. Still stop above each tree before the descent,
+#              for the photo burst, at the touch-sky apex and at the two ends
+#              of the wayline. See src/lib/turn_params.py.
+# stop: come to a full stop at every waypoint, as harpia did before 1.3.0.
+#       Slower, but the aircraft flies exactly the straight legs between waypoints.
+WAYPOINT_TURN_MODES = ("coordinated", "stop")
+
 
 class Config(BaseModel):
     csv_path: FilePath | None = None
@@ -80,6 +90,8 @@ class Config(BaseModel):
     drone_model: str = "m3e"
 
     photo_heading: str = "north"
+
+    waypoint_turn: str = "coordinated"
 
     output_folder: Path | None = None
     output_filename: str | None = None
@@ -123,6 +135,14 @@ class Config(BaseModel):
         if v.lower() not in PHOTO_HEADING_MODES:
             supported_modes = ", ".join(PHOTO_HEADING_MODES)
             raise ValueError(f"photo_heading must be one of: {supported_modes}")
+        return v.lower()
+
+    @field_validator("waypoint_turn")
+    @classmethod
+    def validate_waypoint_turn(cls, v):
+        if v.lower() not in WAYPOINT_TURN_MODES:
+            supported_modes = ", ".join(WAYPOINT_TURN_MODES)
+            raise ValueError(f"waypoint_turn must be one of: {supported_modes}")
         return v.lower()
 
     @property

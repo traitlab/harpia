@@ -8,7 +8,12 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from src.model.config import DRONE_MODEL_CONFIG, PHOTO_HEADING_MODES, Config
+from src.model.config import (
+    DRONE_MODEL_CONFIG,
+    PHOTO_HEADING_MODES,
+    WAYPOINT_TURN_MODES,
+    Config,
+)
 
 
 # -----------------------------------------------------------------------------
@@ -146,6 +151,16 @@ parser.add_argument(
     help="Aircraft yaw for each photo burst: 'north' rotates to true north (default), 'arrival' keeps the heading flown in with.",
 )
 
+# Flight Settings
+parser.add_argument(
+    "--waypoint-turn",
+    type=str,
+    required=False,
+    choices=WAYPOINT_TURN_MODES,
+    default="coordinated",
+    help="How the aircraft passes waypoints that take no photo: 'coordinated' arcs through them (default), 'stop' comes to a full stop at every waypoint.",
+)
+
 # Touch-sky Settings
 parser.add_argument(
     "--touch-sky",
@@ -233,6 +248,7 @@ try:
             csv_path=args.csv,
             drone_model=args.drone_model if args.drone_model else "m3e",
             photo_heading=args.photo_heading,
+            waypoint_turn=args.waypoint_turn,
             touch_sky=args.touch_sky,
             touch_sky_interval=args.touch_sky_interval,
             touch_sky_altitude=args.touch_sky_altitude,

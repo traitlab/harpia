@@ -254,8 +254,9 @@ def test_kml_states_every_turn_rather_than_deferring(configured, csv_path):
     for i, pm in enumerate(placemarks):
         assert pm.find("wpml:useGlobalTurnParam", NS) is None
         mode, damping = _turn(pm)
-        if i % 4 == 2 or i in (0, last):
-            # The photo waypoint holds still for the whole burst, and the RC
+        if i % 4 in (1, 2) or i in (0, last):
+            # The approach waypoint stops so the descent starts at approach speed, the
+            # photo waypoint holds still for the whole burst, and the RC
             # compiles both ends of the wayline as stops.
             assert (mode, damping) == (STOP_TURN, "0")
         else:
@@ -294,11 +295,12 @@ def test_wpml_turn_mode_matches_rc_export(configured, csv_path):
         # Only the approach waypoint is exported with useStraightLine=0.
         assert pm.find("wpml:useStraightLine", NS).text == ("0" if i % 4 == 1 else "1")
 
-    # Photo waypoints stop so the camera fires from a standstill; so do the two
-    # ends of the wayline, whatever the global turn mode says. Everything else
-    # is arced through.
+    # Approach waypoints stop so the descent starts at approach speed,
+    # photo waypoints stop so the camera fires from a standstill, and so do the
+    # two ends of the wayline, whatever the global turn mode says. Everything
+    # else is arced through.
     expected = [
-        STOP_TURN if (i % 4 == 2 or i in (0, last)) else "coordinateTurn"
+        STOP_TURN if (i % 4 in (1, 2) or i in (0, last)) else "coordinateTurn"
         for i in range(len(placemarks))
     ]
     assert modes == expected
@@ -413,6 +415,42 @@ def test_turns_refuse_a_missing_buffer_feature(configured, csv_path):
     b.setup()
     with pytest.raises(ValueError, match="buffer_feature"):
         b.generate()
+
+
+def test_waypoint_turn_coordinated_is_the_default():
+    assert Config().waypoint_turn == "coordinated"
+
+
+@pytest.mark.parametrize("touch_sky", [False, True])
+def test_waypoint_turn_stop_halts_at_every_waypoint(configured, tmp_path, touch_sky):
+    # The pre-1.3.0 behaviour: a full stop everywhere, in both files, and the
+    # approach waypoint back on useStraightLine=1 like the others.
+    _use_fixture(configured, tmp_path, touch_sky)
+    configured.waypoint_turn = "stop"
+    try:
+        wpml, kml = _build_both()
+    finally:
+        configured.touch_sky = False
+
+    for builder in (wpml, kml):
+        assert {_turn(pm) for pm in _placemarks(builder.folder)} == {(STOP_TURN, "0")}
+    assert kml.root.find(".//wpml:globalWaypointTurnMode", NS).text == STOP_TURN
+    assert {pm.find("wpml:useStraightLine", NS).text for pm in _placemarks(wpml.folder)} == {"1"}
+
+
+def test_waypoint_turn_stop_needs_no_buffer_feature(configured, csv_path):
+    # No radius is sized, so there is nothing for buffer_feature to cap.
+    configured.csv_path = csv_path
+    configured.buffer_feature = None
+    configured.waypoint_turn = "stop"
+    b = BuildWaylinesWPML()
+    b.setup()
+    b.generate()
+
+
+def test_waypoint_turn_rejects_unknown_mode():
+    with pytest.raises(ValidationError):
+        Config(waypoint_turn="hover")
 
 
 def _turn(pm):
