@@ -108,9 +108,10 @@ waypoint_turn: coordinated  # 'coordinated' (default) or 'stop'
 
 # Waypoint generation settings
 buffer_path: 10 # Optional
-buffer_feature: 3 # Optional
+buffer_feature: 3 # Optional (also caps the coordinated turns)
 takeoff_coords: [45.5572, -73.5558]  # Optional (lat lon for WGS84, or x y if projected)
 takeoff_coords_projected: false  # Optional
+tsp_time_limit_seconds: 30  # Optional - time budget for the route optimizer
 
 # Area of Interest (AOI) settings
 aoi_path: /path/to/aoi.gpkg # Optional

@@ -365,9 +365,9 @@ def test_no_arc_leaves_buffer_feature_or_drops_below_the_photo(
     # turn between a vertical leg and a horizontal one: the climb out of a tree,
     # and the descent into the next. An arc there leaves early, so the aircraft
     # moves sideways before it has finished climbing, or starts down before it is
-    # over the tree. The ground under it was measured within buffer_feature of
-    # the tree and nowhere else, so no arc may reach beyond that, nor dip below
-    # the photo altitude the plan already flies over it.
+    # over the tree. Below transit altitude, the ground under it was measured
+    # only within buffer_feature of the tree, so no arc may reach beyond that,
+    # nor dip below the photo altitude the plan already flies over it.
     #
     # An arc lies inside the triangle its two tangent points make with the
     # corner, so checking those two points bounds all of it.

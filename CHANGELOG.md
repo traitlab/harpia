@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   horizontal one; a radius of a third of the shorter leg came off the climb or
   descent and was then flown sideways. A 15 m climb gave a 5 m radius, so the
   aircraft left the climb 5 m below the altitude it was climbing to, already
-  heading for the next tree beyond the ground the DSM was sampled over. Each
+  heading for the next tree beyond the DSM area sampled around the tree. Each
   radius is now also capped at `buffer_feature / h`, where `h` is the
   horizontal share of the steeper adjacent leg: vertical corners are
   unaffected, and every waypoint still arcs.

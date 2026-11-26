@@ -68,8 +68,8 @@ waypoint_turn: coordinated
 buffer_path: 10
 
 # Buffer around each feature for calculating its elevation from the DSM.
-# Also the farthest a coordinated turn may stray from a feature: the DSM was
-# sampled within this radius and nowhere else.
+# Also the farthest a coordinated turn may stray from a feature: below transit
+# altitude, this is the only DSM area sampled around the feature.
 buffer_feature: 3
 
 # Takeoff site coordinates for route optimization
@@ -81,6 +81,10 @@ takeoff_coords: null # e.g., [45.55729, -73.55588] or [612709, 5045875]
 # false (default): coordinates are in WGS84 and will be transformed to DSM CRS
 # true: coordinates are already in the same projected CRS as the DSM
 takeoff_coords_projected: false
+
+# Time budget (seconds) for the route optimizer (TSP solver) that orders the features.
+# Larger surveys may need more than the default to find a good route.
+tsp_time_limit_seconds: 30
 
 # ==============================================================================
 # AREA OF INTEREST (AOI) SETTINGS

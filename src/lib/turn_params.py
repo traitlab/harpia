@@ -83,9 +83,9 @@ def turn_radius(previous, corner, following, horizontal_cap_m):
     one. A radius sized from the legs comes off the climb or the descent and is
     then spent flying sideways: a 12 m climb gives a 4 m radius, so the
     aircraft leaves the climb 4 m below the altitude it was climbing to and is
-    4 m from the tree before it gets there. The DSM was sampled within
-    `buffer_feature` of each tree and nowhere else, so that is the farthest an
-    arc may reach.
+    4 m from the tree before it gets there. Below transit altitude, the only
+    DSM area sampled around a tree is within `buffer_feature` of it, so that is
+    the farthest an arc may reach.
 
     An arc of radius r reaches at most r * h from its waypoint horizontally,
     where h is the horizontal share of the steeper adjacent leg. Capping r at
