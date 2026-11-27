@@ -36,6 +36,12 @@ Converts waypoints into DJI-compatible mission files:
 - **Waylines WPML**: Contains detailed waypoint sequences and actions
 - **KMZ Package**: Complete mission file ready for DJI Pilot 2 app
 
+### 🌲 Intra-Tree Photo Points
+Several photos per crown without climbing to transit altitude between them:
+- **Input**: Photo points as `--features`, crown polygons as `--crowns`
+- **Process**: Points of a crown are visited in a row, flown between at the max DSM along the path plus `buffer`, without `approach`
+- **Output**: Waypoints CSV and GeoPackage with a `crown_id` column
+
 ### 🌤️ Touch-Sky Feature
 Periodically ascends to a higher altitude to re-establish signal and transmit updated RTK corrections to the drone:
 - **Purpose**: Fly to higher altitude periodically to restore connection between controller and drone before losing RTK signal
@@ -112,6 +118,10 @@ takeoff_coords: [45.5572, -73.5558]  # Optional (lat lon for WGS84, or x y if pr
 takeoff_coords_projected: false  # Optional
 tsp_time_limit_seconds: 30  # Optional - time budget for the route optimizer
 
+# Intra-tree settings
+crowns_path: /path/to/crowns.gpkg # Optional - crown polygons the point features are located in
+intra_tree_buffer_path: 3 # Optional - corridor radius between points of the same crown
+
 # Area of Interest (AOI) settings
 aoi_path: /path/to/aoi.gpkg # Optional
 aoi_index: 1 # Optional - selects the AOI polygon by 1-based position
@@ -133,6 +143,7 @@ debug_mode: false
 - `--csv`: Path to existing waypoints CSV file
 - `--features, -f`: Path to input features file (GeoPackage, Shapefile)
 - `--dsm, -d`: Path to DSM raster file
+- `--crowns`: Path to the crown polygons the point features are located in, for intra-tree mode; requires `--features` (optional)
 - `--drone-model, -m`: Model of the drone to carry out the mission ('m3e', 'm4e' or 'm4d')
 - `--output-path, -o`: Output directory path (optional)
 - `--output-filename, -n`: Custom output filename without extension (optional)
@@ -227,6 +238,13 @@ python main.py \
 - **Content**: Ellipsoidal elevation values in meters
 - **CRS**: Any projected coordinate system that matches the features and AOI
 
+### Crowns - Optional (intra-tree mode)
+- **Format**: GeoPackage (.gpkg) or Shapefile (.shp)
+- **Geometry**: Polygon or MultiPolygon, one per tree, not overlapping
+- **Features**: must be Point geometries
+- **Unique Identifier**: Each crown should have a unique `crown_id` or `FID`
+- **CRS**: Any projected coordinate system; reprojected to the DSM's if it differs
+
 ### AOI (Area of Interest) - Optional
 - **Format**: GeoPackage (.gpkg) or Shapefile (.shp)  
 - **Geometry**: Polygon or MultiPolygon
@@ -248,6 +266,7 @@ When an existing waypoints CSV is passed with `--csv`, a trailing drone-model su
 The output CSV from features-based waypoint generation contains the following columns:
 - `point_id`: Unique identifier for each point
 - `cluster_id`: Cluster identifier if available (default: 0)
+- `crown_id`: Intra-tree mode only. Consecutive waypoints sharing a `crown_id` are flown between at intra-tree altitude
 - `type`: Point type ('wpt' for waypoints, 'cpt' for checkpoints)
 - `lon_x`: Longitude in WGS84
 - `lat_y`: Latitude in WGS84

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Intra-tree mode (`crowns_path`, `--crowns`) for several photo points per
+  crown. Points of a crown are visited in a row; between them the drone flies
+  at the max DSM of an `intra_tree_buffer_path` corridor (default 3 m) plus
+  `buffer`, without `approach`, and stops only for photos. Adds a `crown_id`
+  column to the waypoints CSV and GeoPackage.
+
+### Changed
+
+- `template.kml` and `waylines.wpml` now take their placemark sequence from a
+  single place, `src/lib/placemark_plan.py`, instead of each builder repeating
+  the per-feature loop with hardcoded index increments. Both files are
+  guaranteed to hold the same placemarks in the same order.
+
 ## [1.3.0] - 2026-11-26
 
 ### Added

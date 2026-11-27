@@ -94,6 +94,12 @@ parser.add_argument(
 )
 parser.add_argument("--dsm", "-d", type=str, required=False, help="Path to the DSM raster file.")
 parser.add_argument(
+    "--crowns",
+    type=str,
+    required=False,
+    help="Path to the crown polygons the point features are located in (intra-tree mode). Consecutive points of one crown are flown between without climbing to transit altitude.",
+)
+parser.add_argument(
     "--drone-model",
     "-m",
     type=str,
@@ -210,6 +216,9 @@ if args.touch_sky:
 if args.features and not args.dsm:
     parser.error("--dsm must be provided when --features is specified")
 
+if args.crowns and not args.features:
+    parser.error("--crowns requires --features (the photo points inside the crowns)")
+
 if (args.aoi_index or args.aoi_qualifier) and not args.aoi:
     parser.error("--aoi must be provided when --aoi-index or --aoi-qualifier is specified")
 
@@ -233,6 +242,7 @@ try:
             # BuildCSV parameters
             features_path=args.features,
             dsm_path=args.dsm,
+            crowns_path=args.crowns,
             aoi_path=args.aoi,
             aoi_index=args.aoi_index,
             aoi_qualifier=args.aoi_qualifier,
@@ -271,6 +281,12 @@ try:
     # Validate BuildCSV parameters
     if config.features_path and not config.dsm_path:
         raise ValueError("DSM path must be provided when features path is specified")
+
+    if config.crowns_path and not config.features_path:
+        raise ValueError("crowns_path requires features_path (the photo points inside the crowns)")
+
+    if config.intra_tree_buffer_path <= 0:
+        raise ValueError("intra_tree_buffer_path must be a positive number of metres")
 
     if (config.aoi_index or config.aoi_qualifier) and not config.aoi_path:
         raise ValueError("AOI path must be provided when aoi_index or aoi_qualifier is specified")

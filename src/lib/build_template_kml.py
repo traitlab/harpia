@@ -8,7 +8,15 @@ from xml.dom.minidom import parseString
 
 from src.lib.config import config
 from src.lib.photo_heading import photo_headings
-from src.lib.placemark_plan import APPROACH, PHOTO, TOUCH_SKY, placemark_plan, step_height
+from src.lib.placemark_plan import (
+    APPROACH,
+    INTRA_DESCENT,
+    PHOTO,
+    TOUCH_SKY,
+    placemark_plan,
+    read_crown_ids,
+    step_height,
+)
 from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.lib.WGS84toEGM96 import download_egm96, transform_to_egm96
 from src.model.config import DRONE_MODEL_CONFIG
@@ -20,6 +28,7 @@ class BuildTemplateKML:
 
         self.wpt_csv_properties = None
         self.cpt_csv_properties = None
+        self.wpt_crown_ids = None
 
         # Variables for common values
         self.use_global_speed = "1"
@@ -115,6 +124,7 @@ class BuildTemplateKML:
         # Read the coordinates from the CSV
         self.wpt_csv_properties = self.read_points_csv(config.csv_path, "wpt")
         self.cpt_csv_properties = self.read_points_csv(config.csv_path, "cpt")
+        self.wpt_crown_ids = read_crown_ids(config.csv_path, len(self.wpt_csv_properties))
         if len(self.wpt_csv_properties) == 0:
             raise ValueError(
                 f"No waypoints (type='wpt') found in {config.csv_path}. "
@@ -177,6 +187,7 @@ class BuildTemplateKML:
             config.touch_sky,
             config.touch_sky_interval,
             config.touch_sky_altitude,
+            self.wpt_crown_ids,
         )
 
         action_group_id = 0
@@ -214,7 +225,8 @@ class BuildTemplateKML:
                     index,
                 )
             else:
-                # FIRST and LAST
+                # FIRST, LAST, INTRA_CLIMB, INTRA_DESCENT (at approach speed)
+                speed = self.wpml_waypointSpeed if step.kind == INTRA_DESCENT else None
                 self.addTreeFirstLastPlacemark(
                     index,
                     lat_y,
@@ -224,6 +236,7 @@ class BuildTemplateKML:
                     step.gimbal,
                     action_group_id,
                     index,
+                    speed,
                 )
             action_group_id += 1
 
@@ -240,6 +253,7 @@ class BuildTemplateKML:
         gimbalPitchRotateAngle,
         actionGroupId,
         actionGroupIndex,
+        speed=None,
     ):
         # Add new Placemark elements for each coordinate
         placemark = ET.Element(f"{{{self.namespaces['kml']}}}Placemark")
@@ -259,10 +273,16 @@ class BuildTemplateKML:
         wpml_height = ET.SubElement(placemark, f"{{{self.namespaces['wpml']}}}height")
         wpml_height.text = height_egm96
 
-        wpml_use_global_speed = ET.SubElement(
-            placemark, f"{{{self.namespaces['wpml']}}}useGlobalSpeed"
-        )
-        wpml_use_global_speed.text = self.use_global_speed
+        if speed is None:
+            wpml_use_global_speed = ET.SubElement(
+                placemark, f"{{{self.namespaces['wpml']}}}useGlobalSpeed"
+            )
+            wpml_use_global_speed.text = self.use_global_speed
+        else:
+            wpml_waypointSpeed = ET.SubElement(
+                placemark, f"{{{self.namespaces['wpml']}}}waypointSpeed"
+            )
+            wpml_waypointSpeed.text = speed
 
         wpml_use_global_heading_param = ET.SubElement(
             placemark, f"{{{self.namespaces['wpml']}}}useGlobalHeadingParam"

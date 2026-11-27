@@ -26,6 +26,8 @@ def main():
                 takeoff_coords=config.takeoff_coords,
                 takeoff_coords_projected=config.takeoff_coords_projected,
                 tsp_time_limit_seconds=config.tsp_time_limit_seconds,
+                crowns_path=config.crowns_path,
+                intra_tree_buffer_path=config.intra_tree_buffer_path,
             )
 
             _, _, generated_csv_path = build_csv.run(

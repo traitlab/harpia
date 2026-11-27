@@ -65,6 +65,7 @@ waypoint_turn: coordinated
 # NOTE: These settings only apply when using features_path
 
 # Buffer around the flight path between waypoints to find minimal elevation above obstacles for checkpoints
+# A radius: the corridor sampled is twice as wide (20 m for 10).
 buffer_path: 10
 
 # Buffer around each feature for calculating its elevation from the DSM.
@@ -85,6 +86,19 @@ takeoff_coords_projected: false
 # Time budget (seconds) for the route optimizer (TSP solver) that orders the features.
 # Larger surveys may need more than the default to find a good route.
 tsp_time_limit_seconds: 30
+
+# ==============================================================================
+# INTRA-TREE SETTINGS
+# ==============================================================================
+# Several photo points per crown (Optional - point features_path only)
+# Between points of the same crown, the drone flies at the max DSM along its
+# path plus buffer, without approach, and stops only for photos.
+
+# Crown polygons, identified by 'crown_id' or FID. Overlapping crowns are an error.
+crowns_path: null # e.g., 'path/to/crowns.gpkg'
+
+# Radius (m) of the DSM corridor between points of the same crown
+intra_tree_buffer_path: 3
 
 # ==============================================================================
 # AREA OF INTEREST (AOI) SETTINGS

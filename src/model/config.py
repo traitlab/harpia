@@ -108,6 +108,10 @@ class Config(BaseModel):
     # more than the 30 s default to converge on a good route.
     tsp_time_limit_seconds: int = 30
 
+    # Intra-tree mode; see config/template.yaml.
+    crowns_path: FilePath | None = None
+    intra_tree_buffer_path: float = 3
+
     aoi_path: FilePath | None = None
     aoi_index: int | None = None
     aoi_qualifier: str | None = None

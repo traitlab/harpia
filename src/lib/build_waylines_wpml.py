@@ -7,7 +7,15 @@ from xml.dom.minidom import parseString
 
 from src.lib.config import config
 from src.lib.photo_heading import photo_headings
-from src.lib.placemark_plan import APPROACH, PHOTO, TOUCH_SKY, placemark_plan, step_height
+from src.lib.placemark_plan import (
+    APPROACH,
+    INTRA_DESCENT,
+    PHOTO,
+    TOUCH_SKY,
+    placemark_plan,
+    read_crown_ids,
+    step_height,
+)
 from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.model.config import DRONE_MODEL_CONFIG
 
@@ -18,6 +26,7 @@ class BuildWaylinesWPML:
 
         self.wpt_csv_properties = None
         self.cpt_csv_properties = None
+        self.wpt_crown_ids = None
 
         # Set by setup() from the template's autoFlightSpeed.
         self.waypointSpeed = None
@@ -132,6 +141,7 @@ class BuildWaylinesWPML:
         # Read the coordinates from the CSV
         self.wpt_csv_properties = self.read_points_csv(config.csv_path, "wpt")
         self.cpt_csv_properties = self.read_points_csv(config.csv_path, "cpt")
+        self.wpt_crown_ids = read_crown_ids(config.csv_path, len(self.wpt_csv_properties))
         if len(self.wpt_csv_properties) == 0:
             raise ValueError(
                 f"No waypoints (type='wpt') found in {config.csv_path}. "
@@ -187,6 +197,7 @@ class BuildWaylinesWPML:
             config.touch_sky,
             config.touch_sky_interval,
             config.touch_sky_altitude,
+            self.wpt_crown_ids,
         )
 
         action_group_id = 0
@@ -214,7 +225,8 @@ class BuildWaylinesWPML:
                     index, lat_y, lon_x, height, point_id, step.gimbal, action_group_id, index
                 )
             else:
-                # FIRST and LAST
+                # FIRST, LAST, INTRA_CLIMB, INTRA_DESCENT (at approach speed)
+                speed = self.waypointSpeed_approach if step.kind == INTRA_DESCENT else None
                 self.addTreeFirstLastPlacemark(
                     index,
                     lat_y,
@@ -224,6 +236,7 @@ class BuildWaylinesWPML:
                     step.gimbal,
                     action_group_id,
                     index,
+                    speed,
                 )
             action_group_id += 1
 
@@ -252,6 +265,7 @@ class BuildWaylinesWPML:
         gimbalPitchRotateAngle,
         actionGroupId,
         actionGroupIndex,
+        speed=None,
     ):
         # Add new Placemark elements for each coordinate
         # for idx, (lat_y, lon_x, elevation_from_dsm, point_id) in enumerate(self.csv_properties):
@@ -268,7 +282,7 @@ class BuildWaylinesWPML:
         wpml_executeHeight.text = height
 
         wpml_waypointSpeed = ET.SubElement(placemark, f"{{{self.namespaces['wpml']}}}waypointSpeed")
-        wpml_waypointSpeed.text = self.waypointSpeed
+        wpml_waypointSpeed.text = speed or self.waypointSpeed
 
         wpml_waypointHeadingParam = self.addWaypointHeadingParam()
         placemark.append(wpml_waypointHeadingParam)
