@@ -8,6 +8,7 @@ from xml.dom.minidom import parseString
 
 from src.lib.config import config
 from src.lib.photo_heading import photo_headings
+from src.lib.placemark_plan import APPROACH, PHOTO, TOUCH_SKY, placemark_plan, step_height
 from src.lib.turn_params import COORDINATE_TURN, STOP_DAMPING, STOP_TURN, finalize_turn_params
 from src.lib.WGS84toEGM96 import download_egm96, transform_to_egm96
 from src.model.config import DRONE_MODEL_CONFIG
@@ -163,128 +164,68 @@ class BuildTemplateKML:
 
     # -------------------------------------------------------------------------
     def generate(self):
-        # Find the first checkpoint's elevation_from_dsm
-        # The first check point is either at the same height than the frist feature or higher. So it's ok to use it as the first point altitude to reach.
-        # Safe takeoff altitude is set by the pilote (takeOffSecurityHeight is set to 100 in our template)
-        # Return to home altitude is also set on the drone remote by the pilote for the last point
-
-        # Add new Placemark elements for each coordinate
-        base_index = 0
-        action_group_id = 0
-        touch_sky_count = 0
-
+        # The first checkpoint is either at the same height as the first feature
+        # or higher, so it is a safe first altitude to reach. The pilot sets the
+        # take-off security height and the return-to-home altitude on the RC.
         aircraft_headings = photo_headings(self.wpt_csv_properties, config.photo_heading)
 
-        for idx, (lat_y, lon_x, wpt_elevation_from_dsm, point_id) in enumerate(
-            self.wpt_csv_properties
-        ):
-            _, _, wpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, wpt_elevation_from_dsm)
-            cpt_elevation_from_dsm = self.cpt_csv_properties[idx][2]
-            _, _, cpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, cpt_elevation_from_dsm)
+        steps = placemark_plan(
+            self.wpt_csv_properties,
+            self.cpt_csv_properties,
+            config.buffer,
+            config.approach,
+            config.touch_sky,
+            config.touch_sky_interval,
+            config.touch_sky_altitude,
+        )
 
-            # Standard sequence
-            height_ellips = str(
-                float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach)
-            )
-            height_egm96 = str(
-                float(cpt_ellips_height_egm96) + float(config.buffer) + float(config.approach)
-            )
-            self.addTreeFirstLastPlacemark(
-                base_index,
-                lat_y,
-                lon_x,
-                height_ellips,
-                height_egm96,
-                "-90",
-                action_group_id,
-                base_index,
-            )
+        action_group_id = 0
+        for index, step in enumerate(steps):
+            lat_y, lon_x, _, point_id = self.wpt_csv_properties[step.wpt]
+            _, _, elevation_egm96 = transform_to_egm96(lat_y, lon_x, step.elevation)
+            height_ellips = step_height(step.elevation, step.offsets)
+            height_egm96 = step_height(elevation_egm96, step.offsets)
 
-            height_ellips = str(
-                float(wpt_elevation_from_dsm) + float(config.buffer) + float(config.approach)
-            )
-            height_egm96 = str(
-                float(wpt_ellips_height_egm96) + float(config.buffer) + float(config.approach)
-            )
-            self.addTreeApproachPlacemark(base_index + 1, lat_y, lon_x, height_ellips, height_egm96)
+            if step.kind == APPROACH:
+                self.addTreeApproachPlacemark(index, lat_y, lon_x, height_ellips, height_egm96)
+                continue
 
-            height_ellips = str(float(wpt_elevation_from_dsm) + float(config.buffer))
-            height_egm96 = str(float(wpt_ellips_height_egm96) + float(config.buffer))
-            self.addTreePhotosPlacemark(
-                base_index + 2,
-                lat_y,
-                lon_x,
-                height_ellips,
-                height_egm96,
-                point_id,
-                action_group_id + 1,
-                base_index + 2,
-                aircraft_headings[idx],
-            )
-
-            cpt_elevation_from_dsm = self.cpt_csv_properties[idx + 1][2]
-            _, _, cpt_ellips_height_egm96 = transform_to_egm96(lat_y, lon_x, cpt_elevation_from_dsm)
-            height_ellips = str(
-                float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach)
-            )
-            height_egm96 = str(
-                float(cpt_ellips_height_egm96) + float(config.buffer) + float(config.approach)
-            )
-            self.addTreeFirstLastPlacemark(
-                base_index + 3,
-                lat_y,
-                lon_x,
-                height_ellips,
-                height_egm96,
-                "-15",
-                action_group_id + 2,
-                base_index + 3,
-            )
-
-            touch_sky_count += 1
-
-            # Add touch-sky action if enabled and interval is reached
-            if config.touch_sky and touch_sky_count >= config.touch_sky_interval:
-                height_ellips = str(
-                    float(cpt_elevation_from_dsm) + float(config.touch_sky_altitude)
+            if step.kind == PHOTO:
+                self.addTreePhotosPlacemark(
+                    index,
+                    lat_y,
+                    lon_x,
+                    height_ellips,
+                    height_egm96,
+                    point_id,
+                    action_group_id,
+                    index,
+                    aircraft_headings[step.wpt],
                 )
-                height_egm96 = str(
-                    float(cpt_ellips_height_egm96) + float(config.touch_sky_altitude)
-                )
+            elif step.kind == TOUCH_SKY:
                 self.addTouchSkyPlacemark(
-                    base_index + 4,
+                    index,
                     lat_y,
                     lon_x,
                     height_ellips,
                     height_egm96,
-                    "-90",
-                    action_group_id + 3,
-                    base_index + 4,
+                    step.gimbal,
+                    action_group_id,
+                    index,
                 )
-
-                height_ellips = str(
-                    float(cpt_elevation_from_dsm) + float(config.buffer) + float(config.approach)
-                )
-                height_egm96 = str(
-                    float(cpt_ellips_height_egm96) + float(config.buffer) + float(config.approach)
-                )
-                self.addTreeFirstLastPlacemark(
-                    base_index + 5,
-                    lat_y,
-                    lon_x,
-                    height_ellips,
-                    height_egm96,
-                    "-15",
-                    action_group_id + 4,
-                    base_index + 5,
-                )
-
-                base_index += 6  # Increment by 6 when touch-sky is added
-                action_group_id += 5  # Increment by 5 when touch-sky is added
-                touch_sky_count = 0
             else:
-                base_index += 4  # Normal increment by 4
-                action_group_id += 3  # Normal increment by 3
+                # FIRST and LAST
+                self.addTreeFirstLastPlacemark(
+                    index,
+                    lat_y,
+                    lon_x,
+                    height_ellips,
+                    height_egm96,
+                    step.gimbal,
+                    action_group_id,
+                    index,
+                )
+            action_group_id += 1
 
         self.finalizeTurnParams()
 
